@@ -2,6 +2,5 @@
 # List of area names (Hebrew, exact match).
 # Include old + new name variants for your location.
 names = [
-    "חיפה - מפרץ",
-    "מפרץ חיפה",
+    "חיפה - מערב",
 ]

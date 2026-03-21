@@ -22,6 +22,10 @@ _SVG_TEMPLATE = """\
   <text x="28" y="32" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#dc2626">
     {shield} Deliver No Matter What
   </text>
+  <!-- commit count -->
+  <text x="396" y="32" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#6b7280" text-anchor="end">
+    {commits} commits
+  </text>
   <!-- subtitle -->
   <text x="28" y="52" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="500" fill="#6b7280" font-style="italic">
     Time spent in shelter
@@ -46,20 +50,21 @@ _SVG_TEMPLATE = """\
 </svg>"""
 
 
-def generate_badge(seconds_24h: float, seconds_7d: float, seconds_30d: float) -> str:
+def generate_badge(seconds_24h: float, seconds_7d: float, seconds_30d: float, commits_30d: int = 0) -> str:
     """Generate SVG badge content."""
     return _SVG_TEMPLATE.format(
         shield="\U0001f6e1\ufe0f",  # 🛡️
         h24=format_duration(seconds_24h),
         d7=format_duration(seconds_7d),
         d30=format_duration(seconds_30d),
+        commits=commits_30d,
     )
 
 
-def write_badge(seconds_24h: float, seconds_7d: float, seconds_30d: float) -> Path:
+def write_badge(seconds_24h: float, seconds_7d: float, seconds_30d: float, commits_30d: int = 0) -> Path:
     """Generate and write SVG badge to badges/shelter.svg."""
     _BADGE_DIR.mkdir(parents=True, exist_ok=True)
     path = _BADGE_DIR / "shelter.svg"
-    svg = generate_badge(seconds_24h, seconds_7d, seconds_30d)
+    svg = generate_badge(seconds_24h, seconds_7d, seconds_30d, commits_30d)
     path.write_text(svg, encoding="utf-8")
     return path

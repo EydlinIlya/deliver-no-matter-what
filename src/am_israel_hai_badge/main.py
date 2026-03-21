@@ -7,9 +7,9 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .api import fetch_day_history, fetch_history
+from .api import fetch_day_history, fetch_github_commit_count, fetch_history
 from .badge import write_badge
-from .config import load_area_names
+from .config import load_area_names, load_github_username
 from .normalize import normalize_day_history_alert, normalize_history_alert
 from .shelter import compute_sessions, shelter_seconds_in_window, total_shelter_seconds
 
@@ -144,9 +144,19 @@ def run() -> None:
     s_7d = today_seconds + yesterday_seconds + sum_older_days(2, 7)
     s_30d = today_seconds + yesterday_seconds + sum_older_days(2, 30)
 
-    logger.info("Totals — 24h: %.0fs, 7d: %.0fs, 30d: %.0fs", s_24h, s_7d, s_30d)
+    # --- Commit count ---
+    github_user = load_github_username()
+    commits_30d = 0
+    if github_user:
+        try:
+            commits_30d = fetch_github_commit_count(github_user, days=30)
+            logger.info("GitHub commits (30d) for %s: %d", github_user, commits_30d)
+        except Exception:
+            logger.exception("Failed to fetch GitHub commit count")
 
-    path = write_badge(s_24h, s_7d, s_30d)
+    logger.info("Totals — 24h: %.0fs, 7d: %.0fs, 30d: %.0fs, commits: %d", s_24h, s_7d, s_30d, commits_30d)
+
+    path = write_badge(s_24h, s_7d, s_30d, commits_30d)
     logger.info("Badge written to %s", path)
 
 

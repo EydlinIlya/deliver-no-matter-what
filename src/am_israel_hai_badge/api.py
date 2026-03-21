@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import urllib.request
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -49,3 +49,44 @@ def fetch_history() -> list[dict]:
     if isinstance(result, list):
         return result
     return []
+
+
+def fetch_github_commit_count(username: str, days: int = 30) -> int:
+    """Count push-event commits for a GitHub user in the last N days.
+
+    Uses the public Events API (no auth needed, up to 10 pages / 300 events).
+    """
+    if not username:
+        return 0
+
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
+    total = 0
+
+    for page in range(1, 11):  # max 10 pages
+        url = f"https://api.github.com/users/{username}/events/public?per_page=30&page={page}"
+        data = _fetch_json(url)
+        if not data or not isinstance(data, list):
+            break
+
+        page_has_old = False
+        for event in data:
+            created = event.get("created_at", "")
+            try:
+                ts = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                continue
+
+            if ts < cutoff:
+                page_has_old = True
+                break
+
+            if event.get("type") == "PushEvent":
+                payload = event.get("payload", {})
+                commits = payload.get("commits", [])
+                # Some events include commit list, others just before/head
+                total += len(commits) if commits else 1
+
+        if page_has_old or len(data) < 30:
+            break
+
+    return total

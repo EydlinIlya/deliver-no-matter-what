@@ -77,13 +77,19 @@ def run() -> None:
 
     # --- Fetch today + yesterday (always fresh) ---
     recent_alerts = []
+    fetch_failed = False
     for day in (yesterday, today):
         try:
             day_alerts = _fetch_day_alerts(day, area_names)
             recent_alerts.extend(day_alerts)
             logger.info("  %s: fetched %d alerts", day.isoformat(), len(day_alerts))
         except Exception:
-            logger.exception("  %s: failed to fetch", day.isoformat())
+            logger.exception("  %s: FAILED to fetch", day.isoformat())
+            fetch_failed = True
+
+    if fetch_failed:
+        logger.error("API fetch failed — keeping existing badge and cache unchanged")
+        sys.exit(1)
 
     recent_sessions = compute_sessions(recent_alerts, area_names)
 

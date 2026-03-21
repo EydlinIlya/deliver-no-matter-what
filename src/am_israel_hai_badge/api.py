@@ -31,21 +31,29 @@ def _fetch_json(url: str) -> list[dict] | dict | None:
     return None
 
 
+class FetchError(Exception):
+    """Raised when an API fetch fails after all retries."""
+
+
 def fetch_day_history(day: date) -> list[dict]:
-    """Fetch full-day archive for a specific date."""
+    """Fetch full-day archive for a specific date. Raises FetchError on failure."""
     url = f"{_BASE_URL}/api/day-history?date={day.isoformat()}"
     result = _fetch_json(url)
     time.sleep(_REQUEST_DELAY)
+    if result is None:
+        raise FetchError(f"Failed to fetch day-history for {day.isoformat()}")
     if isinstance(result, list):
         return result
     return []
 
 
 def fetch_history() -> list[dict]:
-    """Fetch recent alerts (last ~1-2 hours)."""
+    """Fetch recent alerts (last ~1-2 hours). Raises FetchError on failure."""
     url = f"{_BASE_URL}/api/history"
     result = _fetch_json(url)
     time.sleep(_REQUEST_DELAY)
+    if result is None:
+        raise FetchError("Failed to fetch recent history")
     if isinstance(result, list):
         return result
     return []

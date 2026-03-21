@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -61,6 +62,12 @@ def _fetch_day_alerts(day: date, area_names: list[str]):
 def run() -> None:
     area_names = load_area_names()
     logger.info("Area names: %s", area_names)
+
+    reset_cache = "--reset-cache" in sys.argv
+    if reset_cache:
+        logger.info("Resetting cache (--reset-cache)")
+        if _CACHE_PATH.exists():
+            _CACHE_PATH.unlink()
 
     now = datetime.now(tz=_TZ)
     today = now.date()

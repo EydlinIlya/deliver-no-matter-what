@@ -52,41 +52,56 @@ def fetch_history() -> list[dict]:
 
 
 def fetch_github_commit_count(username: str, days: int = 30) -> int:
-    """Count push-event commits for a GitHub user in the last N days.
+    """Count commits for a GitHub user in the last N days.
 
-    Uses the public Events API (no auth needed, up to 10 pages / 300 events).
+    Uses GitHub GraphQL API with contributionsCollection.
+    Includes both public and private repo commits.
+    Requires GITHUB_TOKEN env var or gh CLI auth.
     """
     if not username:
         return 0
 
-    cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
-    total = 0
+    import os
+    import subprocess
 
-    for page in range(1, 11):  # max 10 pages
-        url = f"https://api.github.com/users/{username}/events/public?per_page=30&page={page}"
-        data = _fetch_json(url)
-        if not data or not isinstance(data, list):
-            break
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if not token:
+        try:
+            token = subprocess.check_output(
+                ["gh", "auth", "token"], stderr=subprocess.DEVNULL
+            ).decode().strip()
+        except Exception:
+            logger.warning("No GitHub token available, skipping commit count")
+            return 0
 
-        page_has_old = False
-        for event in data:
-            created = event.get("created_at", "")
-            try:
-                ts = datetime.fromisoformat(created.replace("Z", "+00:00"))
-            except (ValueError, AttributeError):
-                continue
+    now = datetime.now(tz=timezone.utc)
+    from_date = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    to_date = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-            if ts < cutoff:
-                page_has_old = True
-                break
+    query = json.dumps({"query": (
+        '{ user(login: "' + username + '") {'
+        '  contributionsCollection(from: "' + from_date + '", to: "' + to_date + '") {'
+        "    totalCommitContributions"
+        "    restrictedContributionsCount"
+        "  }"
+        "} }"
+    )}).encode()
 
-            if event.get("type") == "PushEvent":
-                payload = event.get("payload", {})
-                commits = payload.get("commits", [])
-                # Some events include commit list, others just before/head
-                total += len(commits) if commits else 1
+    try:
+        req = urllib.request.Request(
+            "https://api.github.com/graphql",
+            data=query,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "User-Agent": "am-israel-hai-badge/0.1",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
 
-        if page_has_old or len(data) < 30:
-            break
-
-    return total
+        cc = data["data"]["user"]["contributionsCollection"]
+        return cc["totalCommitContributions"] + cc["restrictedContributionsCount"]
+    except Exception as exc:
+        logger.warning("GitHub GraphQL query failed: %s", exc)
+        return 0

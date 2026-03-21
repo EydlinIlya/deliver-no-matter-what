@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="80" viewBox="0 0 380 80">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d333b"/>
+      <stop offset="100%" stop-color="#22272e"/>
+    </linearGradient>
+  </defs>
+  <rect width="380" height="80" rx="8" fill="url(#bg)" stroke="#444c56" stroke-width="1"/>
+  <text x="22" y="28" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#e6edf3">
+    🛡️ Time in Shelter
+  </text>
+  <line x1="16" y1="40" x2="364" y2="40" stroke="#444c56" stroke-width="1"/>
+  <text x="22" y="62" font-family="Segoe UI Mono,SF Mono,Menlo,monospace" font-size="13" fill="#9198a1">
+    <tspan fill="#e6edf3" font-weight="600">24h</tspan> 0m
+    <tspan dx="16" fill="#e6edf3" font-weight="600">7d</tspan> 3h
+    <tspan dx="16" fill="#e6edf3" font-weight="600">30d</tspan> 10h 25m
+  </text>
+</svg>

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .models import Alert, ShelterSession, SignalType
+
+# If no signal for this long while IN_SHELTER, auto-close the session.
+_MAX_GAP = timedelta(minutes=45)
+# When auto-closing, assume the user left shelter this long after the last signal.
+_AUTO_EXIT_DELAY = timedelta(minutes=10)
 
 
 def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[ShelterSession]:
@@ -10,6 +15,7 @@ def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[Shelter
 
     Filters alerts to only those matching area_names (exact match).
     All matching area names are treated as the same location (single state machine).
+    If no signal arrives for >45 min while in shelter, auto-closes the session.
     Returns completed + ongoing sessions.
     """
     names_set = set(area_names)
@@ -31,6 +37,7 @@ def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[Shelter
     entry_time = None
     entry_signal = None
     entry_area = None
+    last_activity = None  # timestamp of most recent signal while IN_SHELTER
 
     for alert in deduped:
         if entry_time is None:
@@ -39,9 +46,28 @@ def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[Shelter
                 entry_time = alert.timestamp
                 entry_signal = alert.signal_type
                 entry_area = alert.area
+                last_activity = alert.timestamp
         else:
-            # IN_SHELTER state
-            if alert.signal_type == SignalType.SAFETY:
+            # IN_SHELTER state — check for gap timeout
+            if alert.timestamp - last_activity > _MAX_GAP:
+                # Auto-close: assume user left shortly after last activity
+                sessions.append(ShelterSession(
+                    entry_time=entry_time,
+                    exit_time=last_activity + _AUTO_EXIT_DELAY,
+                    entry_signal=entry_signal,
+                    area=entry_area,
+                ))
+                entry_time = None
+                entry_signal = None
+                entry_area = None
+                last_activity = None
+                # Process this alert from IDLE state
+                if alert.signal_type in (SignalType.PREPARATORY, SignalType.ACTIVE_ALERT):
+                    entry_time = alert.timestamp
+                    entry_signal = alert.signal_type
+                    entry_area = alert.area
+                    last_activity = alert.timestamp
+            elif alert.signal_type == SignalType.SAFETY:
                 sessions.append(ShelterSession(
                     entry_time=entry_time,
                     exit_time=alert.timestamp,
@@ -51,6 +77,10 @@ def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[Shelter
                 entry_time = None
                 entry_signal = None
                 entry_area = None
+                last_activity = None
+            else:
+                # Additional alert/prep while in shelter — update last activity
+                last_activity = alert.timestamp
 
     # Ongoing session (no safety signal yet)
     if entry_time is not None:

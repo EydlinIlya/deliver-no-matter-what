@@ -111,6 +111,23 @@ class TestComputeSessions(unittest.TestCase):
         sessions = compute_sessions([], AREAS)
         self.assertEqual(len(sessions), 0)
 
+    def test_stale_session_auto_closes(self):
+        """If no signal for >45 min, session auto-closes 10 min after last activity."""
+        alerts = [
+            Alert(datetime(2026, 3, 20, 10, 0, 0, tzinfo=TZ), "חיפה - מפרץ", SignalType.ACTIVE_ALERT, ""),
+            Alert(datetime(2026, 3, 20, 10, 20, 0, tzinfo=TZ), "חיפה - מפרץ", SignalType.ACTIVE_ALERT, ""),
+            # 2 hour gap — no safety signal
+            Alert(datetime(2026, 3, 20, 12, 30, 0, tzinfo=TZ), "חיפה - מפרץ", SignalType.PREPARATORY, ""),
+            Alert(datetime(2026, 3, 20, 12, 45, 0, tzinfo=TZ), "חיפה - מפרץ", SignalType.SAFETY, ""),
+        ]
+        sessions = compute_sessions(alerts, AREAS)
+        self.assertEqual(len(sessions), 2)
+        # First session: auto-closed at 10:20 + 10min = 10:30
+        self.assertEqual(sessions[0].exit_time, datetime(2026, 3, 20, 10, 30, 0, tzinfo=TZ))
+        self.assertEqual(sessions[0].duration_seconds, 1800)  # 30 min
+        # Second session: normal with safety
+        self.assertEqual(sessions[1].duration_seconds, 900)  # 15 min
+
 
 class TestTotalShelterSeconds(unittest.TestCase):
     def test_sums_completed_sessions(self):

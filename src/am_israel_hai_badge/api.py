@@ -38,7 +38,7 @@ _SKIP_DELAY = 0.2      # pause after a 404 (also helps avoid rate limits during 
 _RATE_LIMIT_BACKOFF = 10  # pause on 429 before retrying
 _SCAN_WINDOW_DAYS = 32
 _BACKFILL_ALERT_WINDOW = 2000  # IDs to scan back during initial backfill (~50 days at current rate)
-_BACKFILL_MSG_WINDOW = 600     # messages are sparser: ~15/day * 40 days of buffer
+_BACKFILL_MSG_WINDOW = 1500    # messages: ~45/day * 32 days + headroom (scans back to API start)
 _CONSECUTIVE_OLD_STOP = 15  # stop initial backfill after this many real-but-old records
 
 # Tzevaadom threat → oref category

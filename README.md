@@ -37,7 +37,7 @@ In your fork: **Settings → Actions → General**
 ### 4. Run the first update
 
 Go to **Actions → Update Shelter Badge → Run workflow**.
-The first run takes ~20 minutes (backfills 30 days of history).
+The first run downloads 30 days of history from the central repo's cache — takes under a minute.
 
 ### 5. Embed the badge
 
@@ -56,4 +56,4 @@ To embed **anywhere else** (another repo, website, etc.):
 ### Changed your city?
 
 Go to **Actions → Update Shelter Badge → Run workflow**, enable the **resync** checkbox.
-This clears the cached data and re-backfills for the new area.
+This re-downloads the central cache with data for all cities — takes under a minute.

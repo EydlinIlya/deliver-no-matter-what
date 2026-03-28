@@ -82,14 +82,24 @@ def compute_sessions(alerts: list[Alert], area_names: list[str]) -> list[Shelter
                 # Additional alert/prep while in shelter — update last activity
                 last_activity = alert.timestamp
 
-    # Ongoing session (no safety signal yet)
+    # Trailing session — auto-close if the gap since last activity exceeds the
+    # timeout, otherwise mark as genuinely ongoing.
     if entry_time is not None:
-        sessions.append(ShelterSession(
-            entry_time=entry_time,
-            exit_time=None,
-            entry_signal=entry_signal,
-            area=entry_area,
-        ))
+        now = datetime.now(tz=entry_time.tzinfo) if entry_time.tzinfo else datetime.now()
+        if last_activity is not None and now - last_activity > _MAX_GAP:
+            sessions.append(ShelterSession(
+                entry_time=entry_time,
+                exit_time=last_activity + _AUTO_EXIT_DELAY,
+                entry_signal=entry_signal,
+                area=entry_area,
+            ))
+        else:
+            sessions.append(ShelterSession(
+                entry_time=entry_time,
+                exit_time=None,
+                entry_signal=entry_signal,
+                area=entry_area,
+            ))
 
     return sessions
 

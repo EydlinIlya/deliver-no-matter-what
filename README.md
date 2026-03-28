@@ -1,59 +1,172 @@
-# Am Israel Hai
+# Am Israel Hai Badge
 
 ![Time in Shelter](badges/shelter.svg)
 
-*Data from [tzevaadom.co.il](https://tzevaadom.co.il/) · Updated every 30 minutes*
+A GitHub profile badge that tracks how much time you spend in a bomb shelter, based on real-time Home Front Command alerts for your location. Updates automatically every 30 minutes via GitHub Actions.
+
+*Data from [tzevaadom.co.il](https://tzevaadom.co.il/) API · City translations from [peppermint-ice/how-the-lion-roars](https://github.com/peppermint-ice/how-the-lion-roars)*
 
 ---
 
-## Use this badge in your own repo
+## Quick Start
 
-This badge tracks time spent in a bomb shelter based on Home Front Command alerts for your location. It updates automatically every 30 minutes via GitHub Actions.
+> **Why "Use this template" instead of "Fork"?** The badge auto-updates every 30 minutes, creating commits with your area's data. A fork would permanently diverge from the source repo, causing GitHub to constantly nag about being "ahead/behind" and prompt pull requests. A template copy is an independent repo — no upstream link, no sync issues.
 
-### 1. Fork this repo
+### Option A: GitHub GUI
 
-Click **Fork** at the top right.
+1. **Create from template** — click the green **Use this template > Create a new repository** button at the top of this page. Name it whatever you like (e.g. `am-israel-hai-badge`).
 
-### 2. Set your area
+2. **Enable Actions** — in your new repo go to **Settings > Actions > General**:
+   - Actions permissions: **Allow all actions and reusable workflows**
+   - Workflow permissions: **Read and write permissions**
+   - Click **Save**
 
-Open `config.toml` in your fork and set your city name:
+3. **Set your area** — go to **Settings > Secrets and variables > Actions > Variables tab** and click **New repository variable**:
+   - Name: `BADGE_AREAS`
+   - Value: your city/district name (e.g. `Haifa - West`)
+
+   Works in any language — English, Hebrew, Russian, or Arabic. For multiple areas use commas: `Haifa - West, Haifa - Bay`.
+
+4. **Run** — go to **Actions > Update Shelter Badge > Run workflow** and click **Run workflow**.
+   The first run downloads cached data from the central repo — takes under a minute.
+
+5. **Embed** — add this to your README (replace `YOUR_USERNAME` and `REPO_NAME`):
+   ```markdown
+   ![Time in Shelter](https://raw.githubusercontent.com/YOUR_USERNAME/REPO_NAME/master/badges/shelter.svg)
+   ```
+   Or if embedding in the same repo's README:
+   ```markdown
+   ![Time in Shelter](badges/shelter.svg)
+   ```
+
+### Option B: CLI
+
+```bash
+# Create from template and clone
+gh repo create my-shelter-badge --template EydlinIlya/am-israel-hai-badge --public --clone
+cd my-shelter-badge
+
+# Set your area (any language works)
+gh variable set BADGE_AREAS --body "Haifa - West"
+
+# Enable Actions workflow
+gh workflow enable update_badges.yml
+
+# Run the first update
+gh workflow run update_badges.yml
+
+# Check status
+gh run list --workflow=update_badges.yml --limit=1
+```
+
+### Already forked? No problem
+
+If you already forked instead of using the template, everything works the same — just ignore the "ahead/behind" messages on GitHub. Use the `BADGE_AREAS` variable (not `config.toml`) to avoid merge conflicts if you ever sync.
+
+---
+
+## Finding Your Area Name
+
+Area names correspond to Home Front Command alert zones. You can search in any of these:
+
+- [`areas.txt`](areas.txt) — full list of Hebrew area names, one per line
+- [cities.json](https://github.com/peppermint-ice/how-the-lion-roars/blob/main/cities.json) — includes English, Russian, and Arabic translations
+
+Common examples:
+
+| English | Hebrew |
+|---------|--------|
+| Haifa - West | חיפה - מערב |
+| Tel Aviv - City Center | תל אביב - מרכז העיר |
+| Beer Sheva - South | באר שבע - דרום |
+| Jerusalem - Center | ירושלים - מרכז |
+| Ashkelon | אשקלון |
+| Sderot | שדרות |
+
+---
+
+## Changing Your Area
+
+Update the `BADGE_AREAS` variable (**Settings > Secrets and variables > Actions > Variables**) with the new name, then run the workflow. No resync needed — the CSV data already covers all cities.
+
+If you prefer to use `config.toml` instead of the repository variable, edit the `[area].names` list:
 
 ```toml
 [area]
-names = ["your city here"]
-```
-
-Find your exact city name in [`areas.txt`](areas.txt) — open the file and Ctrl+F for your city.
-You can list multiple names if your area has old and new variants.
-
-> `[github].username` is optional — it's auto-detected in GitHub Actions from your repo name.
-
-### 3. Allow Actions to write to the repo
-
-In your fork: **Settings → Actions → General**
-- Under "Actions permissions": select **Allow all actions and reusable workflows**
-- Under "Workflow permissions": select **Read and write permissions**
-
-### 4. Run the first update
-
-Go to **Actions → Update Shelter Badge → Run workflow**.
-The first run downloads 30 days of history from the central repo's cache — takes under a minute.
-
-### 5. Embed the badge
-
-In the **same repo's README**:
-```markdown
-![Time in Shelter](badges/shelter.svg)
-```
-
-To embed **anywhere else** (another repo, website, etc.):
-```markdown
-![Time in Shelter](https://raw.githubusercontent.com/YOUR_USERNAME/am-israel-hai-badge/master/badges/shelter.svg)
+names = ["Haifa - West"]
 ```
 
 ---
 
-### Changed your city?
+## Getting Code Updates
 
-Go to **Actions → Update Shelter Badge → Run workflow**, enable the **resync** checkbox.
-This re-downloads the central cache with data for all cities — takes under a minute.
+If you created from template (recommended), your repo is independent. To pull in code updates from the source:
+
+```bash
+# One-time: add the source as a remote
+git remote add upstream https://github.com/EydlinIlya/am-israel-hai-badge.git
+
+# Pull updates (only source code — your badge/data stay untouched)
+git fetch upstream
+git merge upstream/master --allow-unrelated-histories
+```
+
+Or simply create a fresh repo from the template — your `BADGE_AREAS` variable is stored in GitHub settings, not in files, so nothing is lost.
+
+---
+
+## How Shelter Time Is Calculated
+
+### Data Sources
+
+The badge pulls from two [tzevaadom.co.il](https://tzevaadom.co.il/) API endpoints:
+
+| Endpoint | What it provides |
+|----------|-----------------|
+| `/alerts-history/id/{N}` | Rocket and UAV alerts per city (categories 1–2) |
+| `/system-messages/id/{N}` | "Early Warning" (category 14) and "Incident Ended" (category 13) messages |
+
+City area names are resolved using [peppermint-ice/how-the-lion-roars](https://github.com/peppermint-ice/how-the-lion-roars) `cities.json`, which provides city ID mappings and multi-language translations.
+
+Data is cached incrementally in CSV files (`data/tzevaadom_alerts.csv` and `data/tzevaadom_messages.csv`). Each run only fetches new IDs since the last update.
+
+### The State Machine
+
+Shelter sessions are computed using a two-state machine:
+
+```
+                ┌──────────────────────────┐
+                │                          │
+    ACTIVE_ALERT or PREPARATORY       additional alerts
+    (rocket siren / early warning)    (update last_activity,
+                │                      don't reset entry)
+                ▼                          │
+  ┌──────┐           ┌────────────┐        │
+  │ IDLE │──entry──▸ │ IN_SHELTER │◂───────┘
+  └──────┘           └────────────┘
+      ▲                    │
+      │         SAFETY signal (incident ended)
+      │         OR 45-min gap (auto-close)
+      └────────────────────┘
+```
+
+- **Entry**: a PREPARATORY (early warning) or ACTIVE_ALERT (rocket/UAV siren) signal for your area transitions from IDLE to IN_SHELTER. The entry timestamp is recorded.
+- **While in shelter**: additional alerts update the "last activity" time but don't reset the entry time. A single continuous barrage counts as one session.
+- **Exit**: a SAFETY signal ("Incident Ended") closes the session. If no signal arrives for more than **45 minutes**, the session auto-closes 10 minutes after the last activity.
+- **Broadcast messages**: nationwide "Incident Ended" broadcasts (sent to all areas) can close sessions. Nationwide early warnings are ignored to avoid phantom sessions for areas that had no actual siren.
+
+### Time Windows
+
+The badge shows three time windows — **24 hours**, **7 days**, and **30 days**. Sessions that cross a window boundary are clipped (not dropped), so a 2-hour session that started 23.5 hours ago contributes 30 minutes to the 24-hour window and the full 2 hours to the 7-day and 30-day windows.
+
+### Commit Count
+
+The top-right number shows your total GitHub commit contributions (public + private) over the last 30 days, fetched via the GitHub GraphQL API using the `GITHUB_TOKEN` provided by Actions. Your username is auto-detected from the repository name.
+
+---
+
+## Links
+
+- [tzevaadom.co.il](https://tzevaadom.co.il/) — the alert data API
+- [peppermint-ice/how-the-lion-roars](https://github.com/peppermint-ice/how-the-lion-roars) — city data with area IDs and multi-language translations
+- [areas.txt](areas.txt) — full list of area names

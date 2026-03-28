@@ -5,7 +5,7 @@ import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from .api import fetch_all_areas_history, fetch_github_commit_count
+from .api import fetch_all_areas_history, fetch_github_commit_count, resolve_area_names
 from .badge import write_badge
 from .config import load_area_names, load_github_username
 from .normalize import normalize_alert
@@ -19,7 +19,7 @@ _TZ = ZoneInfo("Asia/Jerusalem")
 
 
 def run() -> None:
-    area_names = load_area_names()
+    area_names = resolve_area_names(load_area_names())
     logger.info("Area names: %s", area_names)
 
     now = datetime.now(tz=_TZ)

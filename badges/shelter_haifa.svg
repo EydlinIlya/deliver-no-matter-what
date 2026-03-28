@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120">
+  <rect width="420" height="120" fill="#f8f9fa"/>
+  <rect width="420" height="120" fill="none" stroke="#e4beba" stroke-width="1" rx="2" opacity="0.3"/>
+  <rect x="0" y="0" width="4" height="120" fill="#b10726"/>
+  <text font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="16" font-weight="800">
+    <tspan x="18" y="28" fill="#191c1d">Deliver </tspan><tspan fill="#b10726">No Matter What</tspan>
+  </text>
+  <text x="406" y="28"
+    font-family="'Segoe UI', system-ui, sans-serif"
+    font-size="10" font-weight="600" fill="#5b403d" text-anchor="end"
+    letter-spacing="1">Haifa</text>
+  <text x="18" y="44"
+    font-family="'Segoe UI', system-ui, sans-serif"
+    font-size="10" font-style="italic" fill="#5b403d">Time spent in bomb shelter in:</text>
+  <rect x="4" y="54" width="416" height="66" fill="#2e3132"/>
+  <rect x="144" y="62" width="1" height="50" fill="#e4beba" opacity="0.15"/>
+  <rect x="284" y="62" width="1" height="50" fill="#e4beba" opacity="0.15"/>
+  <text x="74" y="78"
+    font-family="'Segoe UI', system-ui, sans-serif"
+    font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle"
+    letter-spacing="0.5">Last 24 hours</text>
+  <text x="74" y="104"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">0m</text>
+  <text x="214" y="78"
+    font-family="'Segoe UI', system-ui, sans-serif"
+    font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle"
+    letter-spacing="0.5">Last 7 days</text>
+  <text x="214" y="104"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">2h</text>
+  <text x="354" y="78"
+    font-family="'Segoe UI', system-ui, sans-serif"
+    font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle"
+    letter-spacing="0.5">Last 30 days</text>
+  <text x="354" y="104"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">23h 7m</text>
+</svg>

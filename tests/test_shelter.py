@@ -61,14 +61,16 @@ class TestComputeSessions(unittest.TestCase):
         self.assertEqual(sessions[0].duration_seconds, 600)
         self.assertEqual(sessions[1].duration_seconds, 300)
 
-    def test_ongoing_session(self):
+    def test_ongoing_session_auto_closes_when_stale(self):
+        """A lone alert from the past (>45 min ago) auto-closes."""
         alerts = [
             _alert(0, SignalType.ACTIVE_ALERT),
         ]
         sessions = compute_sessions(alerts, AREAS)
         self.assertEqual(len(sessions), 1)
-        self.assertIsNone(sessions[0].exit_time)
-        self.assertEqual(sessions[0].duration_seconds, 0)
+        # Entry was days ago — auto-closed 10 min after last activity
+        self.assertIsNotNone(sessions[0].exit_time)
+        self.assertEqual(sessions[0].duration_seconds, 600)  # 10 min
 
     def test_safety_while_idle_ignored(self):
         alerts = [
@@ -140,15 +142,17 @@ class TestTotalShelterSeconds(unittest.TestCase):
         sessions = compute_sessions(alerts, AREAS)
         self.assertEqual(total_shelter_seconds(sessions), 900)
 
-    def test_ongoing_contributes_zero(self):
+    def test_stale_trailing_session_auto_closes(self):
+        """A trailing session from the past auto-closes (10 min)."""
         alerts = [
             _alert(0, SignalType.ACTIVE_ALERT),
             _alert(10, SignalType.SAFETY),
             _alert(20, SignalType.ACTIVE_ALERT),
-            # no safety — ongoing
+            # no safety — but entry is days ago, so auto-closes
         ]
         sessions = compute_sessions(alerts, AREAS)
-        self.assertEqual(total_shelter_seconds(sessions), 600)
+        # 600s (closed) + 600s (auto-closed after 10 min)
+        self.assertEqual(total_shelter_seconds(sessions), 1200)
 
 
 class TestShelterSecondsInWindow(unittest.TestCase):

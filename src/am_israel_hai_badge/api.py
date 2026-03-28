@@ -190,11 +190,17 @@ def _read_records(path: Path, area_set: set[str], since: datetime) -> list[dict]
                 if ts < since:
                     continue
                 if city == "*":
-                    # Expand broadcast to one record per configured area
+                    # Broadcast: expand to configured areas, but only for
+                    # SAFETY (cat 13) signals.  Broadcast PREPARATORY (cat 14)
+                    # messages would create phantom shelter sessions for areas
+                    # that never actually had a siren.
+                    cat = int(row["category"])
+                    if cat != 13:
+                        continue
                     for area in area_set:
                         records.append({
                             "alertDate": row["time"],
-                            "category": int(row["category"]),
+                            "category": cat,
                             "category_desc": row.get("title", ""),
                             "data": area,
                             "rid": f"{path.stem}_{row['id']}_{area}",
@@ -232,22 +238,73 @@ def _download_upstream_csv(url: str, path: Path) -> bool:
 
 
 # --------------------------------------------------------------------------- #
-# City ID map (needed for system-messages which use integer city IDs)          #
+# City data (cities.json) — cached to avoid redundant fetches                  #
 # --------------------------------------------------------------------------- #
 
-def _load_all_city_map() -> dict[int, str]:
-    """Return {city_id: city_name} for ALL cities in cities.json."""
+_cities_cache: dict | None = None
+
+
+def _fetch_cities_data() -> dict:
+    """Fetch and cache the full cities.json dict."""
+    global _cities_cache
+    if _cities_cache is not None:
+        return _cities_cache
     data = _fetch_json(_CITIES_JSON_URL)
     if not isinstance(data, dict):
         raise FetchError("Failed to load cities.json")
+    _cities_cache = data.get("cities", data)
+    return _cities_cache
+
+
+def _load_all_city_map() -> dict[int, str]:
+    """Return {city_id: city_name} for ALL cities in cities.json."""
+    cities = _fetch_cities_data()
     id_to_name: dict[int, str] = {}
-    for name, info in data.items():
+    for name, info in cities.items():
         if not isinstance(info, dict):
             continue
         cid = info.get("id", 0)
         if cid:
             id_to_name[cid] = name
     return id_to_name
+
+
+def resolve_area_names(raw_names: list[str]) -> list[str]:
+    """Resolve area names from any language (en/he/ru/ar) to Hebrew.
+
+    Falls back to the original name if no match is found or if
+    cities.json is unavailable.
+    """
+    try:
+        cities = _fetch_cities_data()
+    except Exception:
+        logger.warning("Could not load cities.json — using area names as-is")
+        return raw_names
+
+    # Build lookup tables: exact match + case-insensitive
+    exact: dict[str, str] = {}
+    lower: dict[str, str] = {}
+    for he_name, info in cities.items():
+        if not isinstance(info, dict):
+            continue
+        exact[he_name] = he_name
+        for lang in ("he", "en", "ru", "ar", "value"):
+            val = info.get(lang, "")
+            if val:
+                exact.setdefault(val, he_name)
+                lower.setdefault(val.lower(), he_name)
+
+    resolved: list[str] = []
+    seen: set[str] = set()
+    for name in raw_names:
+        he = exact.get(name) or lower.get(name.lower())
+        if he is None:
+            logger.warning("Area %r not found in cities.json — using as-is", name)
+            he = name
+        if he not in seen:
+            resolved.append(he)
+            seen.add(he)
+    return resolved
 
 
 # --------------------------------------------------------------------------- #

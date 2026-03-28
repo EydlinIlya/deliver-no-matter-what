@@ -2,7 +2,8 @@
 username = "EydlinIlya"
 
 [area]
-# List of area names (Hebrew, exact match).
+# Area names — works in any language: Hebrew, English, Russian, or Arabic.
+# Examples: "חיפה - מערב", "Haifa - West", "Хайфа - запад", "حيفا غرب"
 # Include old + new name variants for your location.
 names = [
     "חיפה - מערב",

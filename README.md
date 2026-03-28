@@ -4,17 +4,39 @@
 
 A GitHub profile badge that tracks how much time you spend in a bomb shelter, based on real-time Home Front Command alerts for your location. Updates automatically every 30 minutes via GitHub Actions.
 
+Designed for your **profile README** (`YOUR_USERNAME/YOUR_USERNAME` repo) — the one that appears on your GitHub profile page.
+
 *Data from [tzevaadom.co.il](https://tzevaadom.co.il/) API · City translations from [peppermint-ice/how-the-lion-roars](https://github.com/peppermint-ice/how-the-lion-roars)*
+
+---
+
+## Finding Your Area Name
+
+Before setting up, find your area name. These correspond to Home Front Command alert zones and work in any language — English, Hebrew, Russian, or Arabic.
+
+- [`areas.txt`](areas.txt) — full list of Hebrew area names, one per line
+- [cities.json](https://github.com/peppermint-ice/how-the-lion-roars/blob/main/cities.json) — searchable, includes English, Russian, and Arabic translations
+
+Common examples:
+
+| English | Hebrew |
+|---------|--------|
+| Haifa - West | חיפה - מערב |
+| Tel Aviv - City Center | תל אביב - מרכז העיר |
+| Beer Sheva - South | באר שבע - דרום |
+| Jerusalem - Center | ירושלים - מרכז |
+| Ashkelon | אשקלון |
+| Sderot | שדרות |
+
+For multiple areas, separate with commas: `Haifa - West, Haifa - Bay`.
 
 ---
 
 ## Quick Start
 
-> **Why "Use this template" instead of "Fork"?** The badge auto-updates every 30 minutes, creating commits with your area's data. A fork would permanently diverge from the source repo, causing GitHub to constantly nag about being "ahead/behind" and prompt pull requests. A template copy is an independent repo — no upstream link, no sync issues.
-
 ### Option A: GitHub GUI
 
-1. **Create from template** — click the green **Use this template > Create a new repository** button at the top of this page. Name it whatever you like (e.g. `am-israel-hai-badge`).
+1. **Create from template** — click the green **Use this template > Create a new repository** button at the top of this page. Name it `YOUR_USERNAME` to use as your profile README repo (or any other name you like).
 
 2. **Enable Actions** — in your new repo go to **Settings > Actions > General**:
    - Actions permissions: **Allow all actions and reusable workflows**
@@ -23,9 +45,7 @@ A GitHub profile badge that tracks how much time you spend in a bomb shelter, ba
 
 3. **Set your area** — go to **Settings > Secrets and variables > Actions > Variables tab** and click **New repository variable**:
    - Name: `BADGE_AREAS`
-   - Value: your city/district name (e.g. `Haifa - West`)
-
-   Works in any language — English, Hebrew, Russian, or Arabic. For multiple areas use commas: `Haifa - West, Haifa - Bay`.
+   - Value: your area name from the [step above](#finding-your-area-name) (e.g. `Haifa - West`)
 
 4. **Run** — go to **Actions > Update Shelter Badge > Run workflow** and click **Run workflow**.
    The first run downloads cached data from the central repo — takes under a minute.
@@ -39,12 +59,14 @@ A GitHub profile badge that tracks how much time you spend in a bomb shelter, ba
    ![Time in Shelter](badges/shelter.svg)
    ```
 
+> **Why "Use this template" and not "Fork"?** The badge auto-updates every 30 minutes, creating commits with your area's data. A fork stays linked to the source repo, so GitHub will constantly show your repo as "X commits ahead, Y commits behind" and prompt you to create pull requests. A template copy is fully independent — no upstream link, no sync noise.
+
 ### Option B: CLI
 
 ```bash
 # Create from template and clone
-gh repo create my-shelter-badge --template EydlinIlya/am-israel-hai-badge --public --clone
-cd my-shelter-badge
+gh repo create YOUR_USERNAME --template EydlinIlya/am-israel-hai-badge --public --clone
+cd YOUR_USERNAME
 
 # Set your area (any language works)
 gh variable set BADGE_AREAS --body "Haifa - West"
@@ -59,42 +81,18 @@ gh workflow run update_badges.yml
 gh run list --workflow=update_badges.yml --limit=1
 ```
 
-### Already forked? No problem
+### Already forked?
 
-If you already forked instead of using the template, everything works the same — just ignore the "ahead/behind" messages on GitHub. Use the `BADGE_AREAS` variable (not `config.toml`) to avoid merge conflicts if you ever sync.
+If you already forked instead of using the template, you have two options:
 
----
-
-## Finding Your Area Name
-
-Area names correspond to Home Front Command alert zones. You can search in any of these:
-
-- [`areas.txt`](areas.txt) — full list of Hebrew area names, one per line
-- [cities.json](https://github.com/peppermint-ice/how-the-lion-roars/blob/main/cities.json) — includes English, Russian, and Arabic translations
-
-Common examples:
-
-| English | Hebrew |
-|---------|--------|
-| Haifa - West | חיפה - מערב |
-| Tel Aviv - City Center | תל אביב - מרכז העיר |
-| Beer Sheva - South | באר שבע - דרום |
-| Jerusalem - Center | ירושלים - מרכז |
-| Ashkelon | אשקלון |
-| Sderot | שדרות |
+- **Keep using the fork** — everything works the same. Set the `BADGE_AREAS` variable as described above. Just ignore the "ahead/behind" messages on GitHub and don't create pull requests back to the source.
+- **Start fresh** — delete the fork (**Settings > General > Danger Zone > Delete this repository**), then create from template using the steps above. Your `BADGE_AREAS` variable will need to be set again on the new repo.
 
 ---
 
 ## Changing Your Area
 
 Update the `BADGE_AREAS` variable (**Settings > Secrets and variables > Actions > Variables**) with the new name, then run the workflow. No resync needed — the CSV data already covers all cities.
-
-If you prefer to use `config.toml` instead of the repository variable, edit the `[area].names` list:
-
-```toml
-[area]
-names = ["Haifa - West"]
-```
 
 ---
 

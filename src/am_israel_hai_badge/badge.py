@@ -30,9 +30,9 @@ _SVG_TEMPLATE = """\
     letter-spacing="1">{commits} commits / 30d</text>
 
   <!-- Subtitle -->
-  <text x="18" y="44"
+  <text x="18" y="46"
     font-family="'Segoe UI', system-ui, sans-serif"
-    font-size="10" font-style="italic" fill="#5b403d">Time spent in bomb shelter in:</text>
+    font-size="13" font-weight="500" fill="#5b403d">Time spent in bomb shelter in:</text>
 
   <!-- Shelter stats dark block -->
   <rect x="4" y="54" width="416" height="66" fill="#2e3132"/>

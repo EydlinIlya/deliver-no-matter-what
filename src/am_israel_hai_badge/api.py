@@ -545,22 +545,23 @@ def fetch_all_areas_history(area_names: list[str]) -> list[dict]:
     return all_records
 
 
-def fetch_github_commit_count(username: str, days: int = 30) -> int:
+def fetch_github_commit_count(username: str, days: int = 30, token: str = "") -> int:
     """Count commits for a GitHub user in the last N days via GraphQL API."""
     if not username:
         return 0
 
-    import subprocess
-
-    token = os.environ.get("GITHUB_TOKEN", "").strip()
     if not token:
-        try:
-            token = subprocess.check_output(
-                ["gh", "auth", "token"], stderr=subprocess.DEVNULL
-            ).decode().strip()
-        except Exception:
-            logger.warning("No GitHub token available, skipping commit count")
-            return 0
+        import subprocess
+
+        token = os.environ.get("GITHUB_TOKEN", "").strip()
+        if not token:
+            try:
+                token = subprocess.check_output(
+                    ["gh", "auth", "token"], stderr=subprocess.DEVNULL
+                ).decode().strip()
+            except Exception:
+                logger.warning("No GitHub token available, skipping commit count")
+                return 0
 
     now = datetime.now(tz=timezone.utc)
     from_date = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")

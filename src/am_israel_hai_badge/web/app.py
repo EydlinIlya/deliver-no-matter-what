@@ -93,9 +93,11 @@ async def serve_badge(token: str):
     s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_names)
 
     commits = 0
-    if badge.get("github_login"):
+    if badge.get("github_login") and badge.get("github_token"):
         try:
-            commits = fetch_github_commit_count(badge["github_login"])
+            commits = fetch_github_commit_count(
+                badge["github_login"], token=badge["github_token"],
+            )
         except Exception:
             pass
 
@@ -136,6 +138,7 @@ async def auth_callback(code: str, request: Request):
         user_id=user_info["id"],
         github_login=user_info["github_login"],
         avatar_url=user_info["avatar_url"],
+        provider_token=user_info.get("provider_token", ""),
     )
     response = RedirectResponse("/dashboard", status_code=302)
     response.set_cookie(
@@ -220,6 +223,7 @@ async def create_badge(request: Request, areas: str = Form(...)):
         user_id=user["uid"],
         github_login=user["login"],
         area_names=resolved,
+        github_token=user.get("gh_token", ""),
     )
     return RedirectResponse("/dashboard", status_code=303)
 

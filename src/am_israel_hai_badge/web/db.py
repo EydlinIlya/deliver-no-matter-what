@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS badges (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id      TEXT    NOT NULL,
     github_login TEXT    NOT NULL DEFAULT '',
+    github_token TEXT    NOT NULL DEFAULT '',
     token        TEXT    UNIQUE NOT NULL,
     area_names   TEXT    NOT NULL,
     label        TEXT,
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS badges (
     id           SERIAL PRIMARY KEY,
     user_id      TEXT    NOT NULL,
     github_login TEXT    NOT NULL DEFAULT '',
+    github_token TEXT    NOT NULL DEFAULT '',
     token        TEXT    UNIQUE NOT NULL,
     area_names   TEXT    NOT NULL,
     label        TEXT,
@@ -66,6 +68,11 @@ class Database:
         self._conn.autocommit = True
         with self._conn.cursor() as cur:
             cur.execute(_PG_SCHEMA)
+            # Migration: add github_token if missing (for existing tables)
+            cur.execute("""
+                ALTER TABLE badges ADD COLUMN IF NOT EXISTS
+                    github_token TEXT NOT NULL DEFAULT ''
+            """)
 
     def _init_sqlite(self, path: str) -> None:
         import sqlite3
@@ -135,15 +142,16 @@ class Database:
         user_id: str,
         github_login: str,
         area_names: list[str],
+        github_token: str = "",
         label: str = "",
         show_commits: bool = False,
     ) -> dict:
         """Create a new badge with a unique token. Returns the badge row."""
         token = secrets.token_urlsafe(12)
         self._execute(
-            """INSERT INTO badges (user_id, github_login, token, area_names, label, show_commits)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (user_id, github_login, token,
+            """INSERT INTO badges (user_id, github_login, github_token, token, area_names, label, show_commits)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (user_id, github_login, github_token, token,
              json.dumps(area_names, ensure_ascii=False), label, int(show_commits)),
         )
         return self.get_badge_by_token(token)  # type: ignore[return-value]

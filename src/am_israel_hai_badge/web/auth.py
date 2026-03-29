@@ -66,13 +66,14 @@ def exchange_code(auth_code: str, code_verifier: str) -> dict:
 
 
 def extract_user_info(session: dict) -> dict:
-    """Pull GitHub login and avatar from a Supabase session response."""
+    """Pull GitHub login, avatar, and provider token from a Supabase session."""
     user = session.get("user", {})
     meta = user.get("user_metadata", {})
     return {
         "id": user.get("id", ""),
         "github_login": meta.get("user_name", meta.get("preferred_username", "")),
         "avatar_url": meta.get("avatar_url", ""),
+        "provider_token": session.get("provider_token", ""),
     }
 
 
@@ -100,12 +101,14 @@ def _verify(cookie: str) -> str | None:
 
 def create_session_cookie(
     user_id: str, github_login: str, avatar_url: str,
+    provider_token: str = "",
 ) -> tuple[str, str, int]:
     """Return (cookie_name, cookie_value, max_age)."""
     payload = json.dumps({
         "uid": user_id,
         "login": github_login,
         "avatar": avatar_url,
+        "gh_token": provider_token,
         "iat": int(time.time()),
     })
     return _COOKIE_NAME, _sign(payload), _COOKIE_MAX_AGE

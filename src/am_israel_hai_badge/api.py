@@ -39,9 +39,11 @@ def _upstream_url(filename: str) -> str | None:
     return f"https://raw.githubusercontent.com/{repo}/master/data/{filename}"
 
 
-# Local CSV cache — committed to repo, updated incrementally each run
-_ALERTS_CSV = _PROJECT_ROOT / "data" / "tzevaadom_alerts.csv"
-_MESSAGES_CSV = _PROJECT_ROOT / "data" / "tzevaadom_messages.csv"
+# Local CSV cache — committed to repo, updated incrementally each run.
+# DATA_DIR env var allows the web service to point at a persistent volume.
+_DATA_DIR = Path(os.environ.get("DATA_DIR", str(_PROJECT_ROOT / "data")))
+_ALERTS_CSV = _DATA_DIR / "tzevaadom_alerts.csv"
+_MESSAGES_CSV = _DATA_DIR / "tzevaadom_messages.csv"
 _CSV_HEADER = ["time", "city", "id", "category", "title"]
 
 # Known-good IDs as of 2026-03-27 — used as floor for forward-probing the max
@@ -169,10 +171,14 @@ def _append_rows(path: Path, rows: list[list]) -> None:
             writer.writerow(row)
 
 
-def _read_records(path: Path, area_set: set[str], since: datetime) -> list[dict]:
-    """Read CSV and return oref-compatible dicts for the configured area.
+def _read_records(
+    path: Path, area_set: set[str] | None, since: datetime,
+) -> list[dict]:
+    """Read CSV and return oref-compatible dicts.
 
-    Rows with city=="*" are broadcast messages that apply to all areas.
+    When *area_set* is ``None`` every record is returned (no area filter,
+    broadcast rows kept as-is with ``city="*"``).  When a set is given the
+    old per-area filtering + broadcast expansion logic applies.
     """
     if not path.exists():
         return []
@@ -181,13 +187,26 @@ def _read_records(path: Path, area_set: set[str], since: datetime) -> list[dict]
         with open(path, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 city = row.get("city", "")
-                if city not in area_set and city != "*":
-                    continue
                 try:
                     ts = datetime.fromisoformat(row["time"]).replace(tzinfo=_TZ)
                 except Exception:
                     continue
                 if ts < since:
+                    continue
+
+                # --- unfiltered mode (web service cache) ---
+                if area_set is None:
+                    records.append({
+                        "alertDate": row["time"],
+                        "category": int(row["category"]),
+                        "category_desc": row.get("title", ""),
+                        "data": city,
+                        "rid": f"{path.stem}_{row['id']}",
+                    })
+                    continue
+
+                # --- per-area filtered mode (CLI / Actions) ---
+                if city not in area_set and city != "*":
                     continue
                 if city == "*":
                     # Broadcast: expand to configured areas, but only for
@@ -573,3 +592,59 @@ def fetch_github_commit_count(username: str, days: int = 30) -> int:
     except Exception as exc:
         logger.warning("GitHub GraphQL query failed: %s", exc)
         return 0
+
+
+# --------------------------------------------------------------------------- #
+# Web-service helpers                                                          #
+# --------------------------------------------------------------------------- #
+
+def update_csv_cache() -> None:
+    """Incrementally update CSV files (alerts + messages) from the API.
+
+    This is the same update logic as ``fetch_all_areas_history`` but without
+    reading the records back — the web service worker calls this, then reads
+    via ``read_all_cached_records``.
+    """
+    since = datetime.now(tz=_TZ) - timedelta(days=_SCAN_WINDOW_DAYS)
+
+    try:
+        id_to_name = _load_all_city_map()
+    except FetchError as exc:
+        logger.warning("City map unavailable (%s) — system messages skipped", exc)
+        id_to_name = {}
+
+    _ensure_csv(_ALERTS_CSV)
+    _ensure_csv(_MESSAGES_CSV)
+
+    for path in (_ALERTS_CSV, _MESSAGES_CSV):
+        if _read_csv_max_id(path) == 0:
+            url = _upstream_url(path.name)
+            if url:
+                _download_upstream_csv(url, path)
+
+    local_alerts_max = _read_csv_max_id(_ALERTS_CSV)
+    api_alerts_max = _find_api_max(
+        _TZEVA_ALERTS_BASE, max(local_alerts_max, _ALERTS_ID_FLOOR)
+    )
+    _update_alerts_csv(_ALERTS_CSV, local_alerts_max, api_alerts_max, since)
+
+    if id_to_name:
+        local_msgs_max = _read_csv_max_id(_MESSAGES_CSV)
+        api_msgs_max = _find_api_max(
+            _TZEVA_MSGS_BASE, max(local_msgs_max, _MSGS_ID_FLOOR)
+        )
+        _update_messages_csv(
+            _MESSAGES_CSV, local_msgs_max, api_msgs_max, id_to_name, since
+        )
+
+
+def read_all_cached_records(since: datetime | None = None) -> list[dict]:
+    """Read ALL records from cached CSVs, unfiltered by area.
+
+    Used by the web service to populate the in-memory AlertCache.
+    """
+    if since is None:
+        since = datetime.now(tz=_TZ) - timedelta(days=_SCAN_WINDOW_DAYS)
+    alerts = _read_records(_ALERTS_CSV, None, since)
+    messages = _read_records(_MESSAGES_CSV, None, since)
+    return alerts + messages

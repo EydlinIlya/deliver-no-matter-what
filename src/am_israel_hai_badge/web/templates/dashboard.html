@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Shelter Badge</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #191c1d;
+    color: #f0f1f2;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .user-info img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+  }
+  .user-info span { font-weight: 600; }
+  .btn-logout {
+    background: none;
+    border: 1px solid #5b5c5d;
+    color: #9a9b9c;
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .btn-logout:hover { border-color: #f0f1f2; color: #f0f1f2; }
+  .content { max-width: 800px; margin: 0 auto; }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #e4beba;
+  }
+  .section {
+    background: #2e3132;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9a9b9c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #3e4142;
+  }
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #3e4142;
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+  tr:last-child td { border-bottom: none; }
+  .embed-input {
+    width: 100%;
+    background: #191c1d;
+    border: 1px solid #3e4142;
+    color: #e4beba;
+    padding: 0.4rem 0.5rem;
+    border-radius: 3px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    cursor: text;
+  }
+  .btn-delete {
+    background: none;
+    border: 1px solid #b10726;
+    color: #b10726;
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .btn-delete:hover { background: #b10726; color: #fff; }
+  .create-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .form-group { flex: 1; }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    color: #9a9b9c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.4rem;
+  }
+  .form-group input {
+    width: 100%;
+    background: #191c1d;
+    border: 1px solid #3e4142;
+    color: #f0f1f2;
+    padding: 0.5rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: #b10726;
+  }
+  .btn-create {
+    background: #b10726;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-create:hover { background: #8e0520; }
+  .meta {
+    font-size: 0.75rem;
+    color: #5b5c5d;
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="user-info">
+    <img src="{{avatar}}" alt="avatar"/>
+    <span>{{username}}</span>
+  </div>
+  <form method="post" action="/auth/logout">
+    <button type="submit" class="btn-logout">Log out</button>
+  </form>
+</div>
+
+<div class="content">
+  <h2>Your Badges</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Area</th>
+          <th>Embed Code</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{badge_rows}}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Create New Badge</h2>
+  <div class="section">
+    <form method="post" action="/api/badges" class="create-form">
+      <div class="form-group">
+        <label for="areas">Area name (any language, comma-separated)</label>
+        <input type="text" id="areas" name="areas" placeholder="e.g. Haifa - West" required/>
+      </div>
+      <button type="submit" class="btn-create">Create</button>
+    </form>
+  </div>
+
+  <p class="meta">Cache: {{record_count}} records · Last refresh: {{last_refresh}}</p>
+</div>
+
+</body>
+</html>

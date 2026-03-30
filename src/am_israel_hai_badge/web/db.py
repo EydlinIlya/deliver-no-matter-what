@@ -28,9 +28,9 @@ CREATE TABLE IF NOT EXISTS csv_cache (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS svg_cache (
+CREATE TABLE IF NOT EXISTS badge_data_cache (
     token      TEXT PRIMARY KEY,
-    svg        TEXT NOT NULL,
+    data       TEXT NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -57,9 +57,9 @@ CREATE TABLE IF NOT EXISTS csv_cache (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS svg_cache (
+CREATE TABLE IF NOT EXISTS badge_data_cache (
     token      TEXT PRIMARY KEY,
-    svg        TEXT NOT NULL,
+    data       TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 """
@@ -198,31 +198,35 @@ class Database:
         )
         return rowcount > 0
 
-    # ── SVG Cache ──────────────────────────────────────────────────────
+    # ── Badge Data Cache ─────────────────────────────────────────────
 
-    def save_svg(self, token: str, svg: str) -> None:
-        """Cache the last generated SVG for a badge."""
+    def save_badge_data(self, token: str, s_24h: float, s_7d: float, s_30d: float, commits: int) -> None:
+        """Cache the last computed badge data (4 numbers, ~40 bytes)."""
+        data = json.dumps([s_24h, s_7d, s_30d, commits])
         if self._backend == "pg":
             self._execute(
-                """INSERT INTO svg_cache (token, svg, updated_at)
+                """INSERT INTO badge_data_cache (token, data, updated_at)
                    VALUES (?, ?, NOW())
                    ON CONFLICT (token) DO UPDATE
-                   SET svg = EXCLUDED.svg, updated_at = NOW()""",
-                (token, svg),
+                   SET data = EXCLUDED.data, updated_at = NOW()""",
+                (token, data),
             )
         else:
             self._execute(
-                """INSERT OR REPLACE INTO svg_cache (token, svg, updated_at)
+                """INSERT OR REPLACE INTO badge_data_cache (token, data, updated_at)
                    VALUES (?, ?, CURRENT_TIMESTAMP)""",
-                (token, svg),
+                (token, data),
             )
 
-    def load_svg(self, token: str) -> str | None:
-        """Load cached SVG for a badge."""
+    def load_badge_data(self, token: str) -> tuple[float, float, float, int] | None:
+        """Load cached badge data. Returns (s_24h, s_7d, s_30d, commits) or None."""
         row = self._fetchone(
-            "SELECT svg FROM svg_cache WHERE token = ?", (token,),
+            "SELECT data FROM badge_data_cache WHERE token = ?", (token,),
         )
-        return row["svg"] if row else None
+        if not row:
+            return None
+        vals = json.loads(row["data"])
+        return vals[0], vals[1], vals[2], int(vals[3])
 
     # ── CSV Cache ──────────────────────────────────────────────────────
 

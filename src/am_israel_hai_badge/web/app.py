@@ -106,7 +106,7 @@ async def serve_badge(token: str, request: Request):
     if isinstance(area_name, list):
         area_name = area_name[0] if area_name else ""
 
-    # If cache has data, generate fresh SVG and persist it
+    # If cache has data, compute fresh values and persist them
     if alert_cache.record_count > 0:
         s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_name)
 
@@ -119,18 +119,19 @@ async def serve_badge(token: str, request: Request):
             except Exception:
                 pass
 
-        svg = generate_badge(s_24h, s_7d, s_30d, commits)
-
-        # Persist so the badge survives cold starts
         try:
-            db.save_svg(token, svg)
+            db.save_badge_data(token, s_24h, s_7d, s_30d, commits)
         except Exception:
             pass
     else:
-        # Cache empty (cold start) — serve last saved SVG
-        svg = db.load_svg(token)
-        if not svg:
-            svg = generate_badge(0, 0, 0, 0)
+        # Cache empty (cold start) — use last saved data
+        cached = db.load_badge_data(token)
+        if cached:
+            s_24h, s_7d, s_30d, commits = cached
+        else:
+            s_24h, s_7d, s_30d, commits = 0, 0, 0, 0
+
+    svg = generate_badge(s_24h, s_7d, s_30d, commits)
 
     is_same_origin = request.headers.get("sec-fetch-site", "") in ("same-origin", "same-site")
     cache = "no-cache, no-store" if is_same_origin else "public, max-age=900, s-maxage=900"

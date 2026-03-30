@@ -143,6 +143,30 @@
     font-weight: 700;
     color: #f0f1f2;
     font-variant-numeric: tabular-nums;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    height: 1.4em;
+  }
+  .odometer-digit {
+    display: inline-block;
+    height: 1.4em;
+    overflow: hidden;
+    position: relative;
+  }
+  .odometer-ribbon {
+    display: flex;
+    flex-direction: column;
+    transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .odometer-ribbon span {
+    height: 1.4em;
+    line-height: 1.4em;
+    display: block;
+  }
+  .bp-suffix {
+    line-height: 1.4em;
   }
 
   /* Feature cards */
@@ -366,21 +390,21 @@
     <div class="badge-preview">
       <div class="bp-top">
         <div class="bp-title">Deliver <span>No Matter What</span></div>
-        <div class="bp-contrib"><span data-count="128">0</span> contributions / 30d</div>
+        <div class="bp-contrib"><span data-value="128" class="bp-value" style="font-size:inherit;font-weight:inherit;color:inherit;height:auto;display:inline-flex">0</span> contributions / 30d</div>
       </div>
       <div class="bp-subtitle">Time spent in bomb shelter in:</div>
       <div class="bp-bottom">
         <div class="bp-col">
           <div class="bp-label">Last 24 hours</div>
-          <div class="bp-value"><span data-count="47" data-suffix="m">0m</span></div>
+          <div class="bp-value"><span data-value="47m">0</span></div>
         </div>
         <div class="bp-col">
           <div class="bp-label">Last 7 days</div>
-          <div class="bp-value"><span data-count="2" data-suffix="h" data-extra=" 14m">0h</span></div>
+          <div class="bp-value"><span data-value="2h 14m">0</span></div>
         </div>
         <div class="bp-col">
           <div class="bp-label">Last 30 days</div>
-          <div class="bp-value"><span data-count="23" data-suffix="h" data-extra=" 8m">0h</span></div>
+          <div class="bp-value"><span data-value="23h 8m">0</span></div>
         </div>
       </div>
     </div>
@@ -428,31 +452,50 @@
 
 <script>
 (function() {
-  function animateCount(el, duration) {
-    const target = parseInt(el.dataset.count, 10);
-    const suffix = el.dataset.suffix || '';
-    const extra = el.dataset.extra || '';
-    const start = performance.now();
+  // Build a rolling digit column: 0–9 stacked, then scroll to target
+  function buildOdometer(el) {
+    const text = el.dataset.value;        // e.g. "47m" or "23h 8m"
+    const container = el.closest('.bp-value');
+    container.innerHTML = '';
 
-    function tick(now) {
-      const t = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);   // ease-out cubic
-      const val = Math.round(ease * target);
-      el.textContent = val + suffix + (t >= 1 ? extra : '');
-      if (t < 1) requestAnimationFrame(tick);
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch >= '0' && ch <= '9') {
+        const digit = parseInt(ch, 10);
+        const wrap = document.createElement('span');
+        wrap.className = 'odometer-digit';
+        const ribbon = document.createElement('span');
+        ribbon.className = 'odometer-ribbon';
+        for (let n = 0; n <= 9; n++) {
+          const s = document.createElement('span');
+          s.textContent = n;
+          ribbon.appendChild(s);
+        }
+        wrap.appendChild(ribbon);
+        container.appendChild(wrap);
+        // Stagger each digit slightly
+        const delay = 200 + i * 120;
+        setTimeout(function() {
+          ribbon.style.transform = 'translateY(-' + (digit * 1.4) + 'em)';
+        }, delay);
+      } else {
+        const suffix = document.createElement('span');
+        suffix.className = 'bp-suffix';
+        suffix.textContent = ch;
+        container.appendChild(suffix);
+      }
     }
-    requestAnimationFrame(tick);
   }
 
-  const counters = document.querySelectorAll('[data-count]');
+  const counters = document.querySelectorAll('[data-value]');
   const observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        animateCount(entry.target, 1500);
+        buildOdometer(entry.target);
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.5 });
+  }, { threshold: 0.3 });
   counters.forEach(function(el) { observer.observe(el); });
 })();
 </script>

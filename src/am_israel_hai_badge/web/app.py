@@ -180,7 +180,7 @@ async def dashboard(request: Request):
         url = f"{base}/badge/{b['token']}.svg"
         embed = f"![Time in Shelter]({url})"
         badge_rows += f"""
-    <div class="badge-card">
+    <div class="badge-card" data-token="{b['token']}">
       <div class="badge-card-preview">
         <img src="/badge/{b['token']}.svg" alt="badge"/>
       </div>
@@ -194,12 +194,9 @@ async def dashboard(request: Request):
               <svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
               <svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </button>
-            <form method="post" action="/api/badges/{b['token']}/delete"
-                  onsubmit="return confirm('Delete this badge?')" style="margin:0">
-              <button type="submit" class="btn-icon btn-delete" title="Delete">
-                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              </button>
-            </form>
+            <button type="button" class="btn-icon btn-delete" title="Delete" data-token="{b['token']}">
+              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -239,12 +236,21 @@ async def create_badge(request: Request, areas: str = Form(...)):
         raise HTTPException(400, "No areas specified")
 
     resolved = resolve_area_names(raw_names)
-    db.create_badge(
+    badge = db.create_badge(
         user_id=user["uid"],
         github_login=user["login"],
         area_names=resolved,
         github_token=user.get("gh_token", ""),
     )
+
+    # AJAX: return JSON with badge info
+    if request.headers.get("accept", "").startswith("application/json"):
+        base = _base_url(request)
+        return {
+            "token": badge["token"],
+            "areas": ", ".join(resolved),
+            "url": f"{base}/badge/{badge['token']}.svg",
+        }
     return RedirectResponse("/dashboard", status_code=303)
 
 
@@ -254,6 +260,9 @@ async def delete_badge(token: str, request: Request):
     if not user:
         raise HTTPException(401)
     db.delete_badge(token, user["uid"])
+
+    if request.headers.get("accept", "").startswith("application/json"):
+        return {"ok": True}
     return RedirectResponse("/dashboard", status_code=303)
 
 

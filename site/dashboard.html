@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Deliver No Matter What</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #131313;
+    color: #e5e2e1;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.5rem; background: #131313;
+  }
+  .topbar-brand { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; }
+  .topbar-user { display: flex; align-items: center; gap: 0.75rem; }
+  .topbar-user img { width: 36px; height: 36px; border-radius: 50%; }
+  .topbar-name { font-size: 0.8rem; font-weight: 700; }
+  .btn-logout {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.15em; color: #e01e37;
+    background: none; border: none; cursor: pointer; transition: color 0.15s;
+  }
+  .btn-logout:hover { color: #ffb3b1; }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 3rem 1.5rem; }
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900;
+    letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.75rem;
+  }
+  .page-title span { color: #e01e37; }
+  .page-subtitle { font-size: 1rem; color: #c5c7c8; margin-bottom: 3rem; max-width: 600px; }
+
+  /* ── Loading state ────────────────────────────────── */
+  .loading-state {
+    text-align: center; padding: 4rem; color: #9a9b9c;
+  }
+  .loading-state .spinner {
+    width: 32px; height: 32px; margin: 0 auto 1rem;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #e01e37;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  /* ── Create Badge Section ───────────────────────── */
+  .create-section {
+    background: #1c1b1b; border-radius: 12px;
+    padding: 2rem; margin-bottom: 3rem; position: relative;
+  }
+  .create-glow {
+    position: absolute; top: 0; right: 0;
+    width: 128px; height: 128px;
+    background: rgba(224, 30, 55, 0.05);
+    border-radius: 50%; filter: blur(48px); pointer-events: none;
+  }
+  .create-inner { position: relative; z-index: 1; }
+  .section-title {
+    font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-title-icon {
+    width: 24px; height: 24px; background: #e01e37; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: #fff;
+  }
+  .create-form { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; }
+  .form-group { position: relative; }
+  .form-group label {
+    display: block; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    color: #9a9b9c; margin-bottom: 0.5rem; padding-left: 0.25rem;
+  }
+  .form-group input {
+    width: 100%; background: #0e0e0e; border: none;
+    color: #e5e2e1; padding: 1rem; border-radius: 8px;
+    font-family: inherit; font-size: 0.95rem; outline: none;
+    transition: box-shadow 0.2s;
+  }
+  .form-group input:focus { box-shadow: 0 0 0 2px rgba(224, 30, 55, 0.4); }
+  .form-group input::placeholder { color: rgba(197, 199, 200, 0.3); }
+
+  .btn-create {
+    background: #e01e37; color: #fff; border: none;
+    padding: 1rem 2rem; border-radius: 8px;
+    font-family: inherit; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-create:hover { filter: brightness(1.1); }
+  .btn-create:active { transform: scale(0.97); }
+  .btn-create.loading { pointer-events: none; opacity: 0.7; }
+  .btn-create .spinner {
+    display: none; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  .btn-create.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .badge-card { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .badge-card.removing { animation: fadeOut 0.25s ease forwards; }
+  @keyframes fadeOut { to { opacity: 0; transform: translateY(-8px); height: 0; padding: 0; margin: 0; overflow: hidden; } }
+
+  /* ── Autocomplete ─────────────────────────────────── */
+  .ac-dropdown {
+    position: absolute; top: 100%; left: 0; width: 100%;
+    margin-top: 0.5rem;
+    background: rgba(53, 53, 52, 0.85);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-height: 280px; overflow-y: auto; z-index: 100;
+    display: none; padding: 0.375rem;
+  }
+  .ac-dropdown.visible { display: block; }
+  .ac-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem; border-radius: 8px;
+    cursor: pointer; transition: background 0.15s; gap: 1rem;
+  }
+  .ac-item:hover { background: rgba(224, 30, 55, 0.1); }
+  .ac-item-name { font-size: 0.9rem; font-weight: 500; color: #e5e2e1; }
+  .ac-item-alt { font-size: 0.75rem; color: #9a9b9c; text-align: right; flex-shrink: 0; }
+  .ac-empty { padding: 1rem; text-align: center; font-size: 0.85rem; color: #9a9b9c; }
+
+  /* ── Badge Cards ──────────────────────────────────── */
+  .badges-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; }
+  .badges-header h2 { font-size: 1.25rem; font-weight: 700; }
+
+  .badge-card {
+    background: #1c1b1b; border-radius: 12px;
+    padding: 2rem; margin-bottom: 1.25rem; transition: background 0.2s;
+  }
+  .badge-card:hover { background: #201f1f; }
+  .badge-card-preview { margin-bottom: 1.25rem; }
+  .badge-card-preview img { width: 100%; max-width: 600px; height: auto; border-radius: 4px; }
+
+  .badge-card-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .badge-card-area { font-size: 1.25rem; font-weight: 700; flex-shrink: 0; }
+  .embed-group { flex: 1; min-width: 200px; }
+  .embed-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.15em; color: #9a9b9c; margin-bottom: 0.35rem;
+  }
+  .embed-row { display: flex; align-items: center; gap: 0.5rem; }
+  .embed-code {
+    flex: 1; background: #0e0e0e; padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.7rem; color: #ffb3b1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    cursor: text; border: none; outline: none; width: 100%;
+  }
+  .btn-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: #2a2a2a; border: none; border-radius: 8px;
+    cursor: pointer; transition: all 0.2s; color: #9a9b9c; flex-shrink: 0;
+  }
+  .btn-icon:hover { background: #353534; color: #e5e2e1; }
+  .btn-icon.copied { background: rgba(224, 30, 55, 0.15); color: #e01e37; }
+  .btn-icon svg { width: 16px; height: 16px; fill: currentColor; }
+  .btn-delete:hover { background: rgba(224, 30, 55, 0.1); color: #e01e37; }
+
+  .empty-state {
+    background: #1c1b1b; border-radius: 12px;
+    padding: 3rem; text-align: center;
+    color: #9a9b9c; font-size: 0.95rem;
+  }
+
+  .ac-dropdown::-webkit-scrollbar { width: 6px; }
+  .ac-dropdown::-webkit-scrollbar-track { background: transparent; }
+  .ac-dropdown::-webkit-scrollbar-thumb { background: #353534; border-radius: 3px; }
+
+  @media (max-width: 640px) {
+    .create-form { grid-template-columns: 1fr; }
+    .badge-card-meta { flex-direction: column; align-items: flex-start; }
+    .embed-group { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="topbar-brand">Deliver <span style="color:#e01e37">No Matter What</span></span>
+  <div class="topbar-user" id="user-info" style="display:none">
+    <div style="text-align: right;">
+      <div class="topbar-name" id="username"></div>
+      <button class="btn-logout" id="btn-logout">Log out</button>
+    </div>
+    <img id="avatar" src="" alt="avatar"/>
+  </div>
+</header>
+
+<main class="content">
+  <h1 class="page-title">Your <span>Badges</span></h1>
+  <p class="page-subtitle">Pick your area and get a unique badge URL to embed in your profile README or anywhere else.</p>
+
+  <div id="app-loading" class="loading-state">
+    <div class="spinner"></div>
+    Loading...
+  </div>
+
+  <div id="app-content" style="display:none">
+    <div class="create-section">
+      <div class="create-glow"></div>
+      <div class="create-inner">
+        <h2 class="section-title">
+          <span class="section-title-icon">+</span>
+          Create New Badge
+        </h2>
+        <form class="create-form" id="badge-form">
+          <div class="form-group" id="area-group">
+            <label for="areas">Area name (any language)</label>
+            <input type="text" id="areas" name="areas"
+                   placeholder="Start typing: Haifa, &#1495;&#1497;&#1508;&#1492;, &#1061;&#1072;&#1081;&#1092;&#1072;..."
+                   required autocomplete="off"/>
+            <div class="ac-dropdown" id="ac-dropdown"></div>
+          </div>
+          <button type="submit" class="btn-create"><div class="spinner"></div> Create</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="badges-header">
+      <h2>Active Badges</h2>
+    </div>
+    <div id="badge-list"></div>
+  </div>
+</main>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function() {
+  const SUPABASE_URL = 'https://ttnjqiyfixfxuosuocow.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0bmpxaXlmaXhmeHVvc3VvY293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NzcxOTMsImV4cCI6MjA5MDM1MzE5M30.6DxG7c30a9kP_q_AXB5vJ7nkfiOuJZmV1HJLtg6KRVA';
+  const EDGE_FN_BASE = SUPABASE_URL + '/functions/v1/serve-badge';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const badgeList = document.getElementById('badge-list');
+  const form = document.getElementById('badge-form');
+  const input = document.getElementById('areas');
+  const dropdown = document.getElementById('ac-dropdown');
+  const createBtn = form.querySelector('.btn-create');
+
+  let areas = [];
+  let currentUser = null;
+  let debounceTimer;
+
+  // ── Auth ──────────────────────────────────────────
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = '/';
+      return;
+    }
+    currentUser = session.user;
+    const meta = currentUser.user_metadata || {};
+    const login = meta.user_name || meta.preferred_username || '';
+    const avatar = meta.avatar_url || '';
+
+    document.getElementById('username').textContent = login;
+    if (avatar) document.getElementById('avatar').src = avatar;
+    document.getElementById('user-info').style.display = '';
+
+    // Store provider_token for badge creation
+    currentUser._providerToken = session.provider_token || '';
+    currentUser._login = login;
+
+    await loadBadges();
+    loadAreas();
+
+    document.getElementById('app-loading').style.display = 'none';
+    document.getElementById('app-content').style.display = '';
+  }
+
+  document.getElementById('btn-logout').addEventListener('click', async function() {
+    await sb.auth.signOut();
+    window.location.href = '/';
+  });
+
+  // ── Load badges ───────────────────────────────────
+  async function loadBadges() {
+    const { data: badges, error } = await sb
+      .from('badges')
+      .select('token, area_names, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (error || !badges) {
+      badgeList.innerHTML = '<div class="empty-state">Failed to load badges.</div>';
+      return;
+    }
+
+    if (badges.length === 0) {
+      badgeList.innerHTML = '<div class="empty-state">No badges yet. Create one above.</div>';
+      return;
+    }
+
+    badgeList.innerHTML = '';
+    badges.forEach(b => {
+      const areaRaw = JSON.parse(b.area_names);
+      const area = Array.isArray(areaRaw) ? areaRaw[0] : areaRaw;
+      badgeList.insertAdjacentHTML('beforeend', badgeCardHTML(b.token, area));
+      bindCard(badgeList.lastElementChild);
+    });
+  }
+
+  // ── Load areas ────────────────────────────────────
+  async function loadAreas() {
+    try {
+      const resp = await fetch(SUPABASE_URL + '/functions/v1/serve-areas');
+      areas = await resp.json();
+    } catch(e) {
+      // Fallback: try fetching cities.json directly
+      try {
+        const resp = await fetch('https://raw.githubusercontent.com/peppermint-ice/how-the-lion-roars/refs/heads/main/cities.json');
+        const data = await resp.json();
+        const cities = data.cities || data;
+        areas = [];
+        for (const [he, info] of Object.entries(cities)) {
+          if (typeof info !== 'object' || info === null) continue;
+          const entry = { he };
+          if (info.en) entry.en = info.en;
+          if (info.ru) entry.ru = info.ru;
+          if (info.ar) entry.ar = info.ar;
+          areas.push(entry);
+        }
+        areas.sort((a, b) => (a.en || a.he).localeCompare(b.en || b.he));
+      } catch(e2) {}
+    }
+  }
+
+  // ── Badge card HTML ───────────────────────────────
+  function badgeCardHTML(token, areasText) {
+    const badgeUrl = EDGE_FN_BASE + '/' + token;
+    const embed = '![Time in Shelter](' + badgeUrl + ')';
+    return '<div class="badge-card" data-token="' + token + '">' +
+      '<div class="badge-card-preview">' +
+        '<img src="' + badgeUrl + '" alt="badge"/>' +
+      '</div>' +
+      '<div class="badge-card-meta">' +
+        '<div class="badge-card-area">' + escapeHtml(areasText) + '</div>' +
+        '<div class="embed-group">' +
+          '<div class="embed-label">Embed Code</div>' +
+          '<div class="embed-row">' +
+            '<input type="text" value="' + escapeAttr(embed) + '" readonly onclick="this.select()" class="embed-code"/>' +
+            '<button type="button" class="btn-icon btn-copy" title="Copy">' +
+              '<svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+              '<svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
+            '</button>' +
+            '<button type="button" class="btn-icon btn-delete" title="Delete" data-token="' + token + '">' +
+              '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function escapeAttr(s) { return s.replace(/"/g, '&quot;'); }
+
+  // ── Generate token ────────────────────────────────
+  function generateToken() {
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    return btoa(String.fromCharCode(...bytes))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  // ── Create badge ──────────────────────────────────
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const area = input.value.trim();
+    if (!area) return;
+
+    createBtn.classList.add('loading');
+
+    const token = generateToken();
+    const { error } = await sb.from('badges').insert({
+      user_id: currentUser.id,
+      github_login: currentUser._login,
+      github_token: currentUser._providerToken,
+      token: token,
+      area_names: JSON.stringify(area),
+    });
+
+    if (error) {
+      alert('Failed to create badge: ' + error.message);
+      createBtn.classList.remove('loading');
+      return;
+    }
+
+    // Remove empty state
+    const empty = badgeList.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    badgeList.insertAdjacentHTML('afterbegin', badgeCardHTML(token, area));
+    bindCard(badgeList.firstElementChild);
+    input.value = '';
+    createBtn.classList.remove('loading');
+  });
+
+  // ── Delete badge ──────────────────────────────────
+  function handleDelete(btn) {
+    const token = btn.dataset.token;
+    if (!confirm('Delete this badge?')) return;
+    const card = btn.closest('.badge-card');
+    card.classList.add('removing');
+
+    sb.from('badges').delete().eq('token', token).eq('user_id', currentUser.id)
+      .then(({ error }) => {
+        if (error) { card.classList.remove('removing'); return; }
+        // Also clean up badge_data_cache
+        sb.from('badge_data_cache').delete().eq('token', token).then(() => {});
+        setTimeout(() => {
+          card.remove();
+          if (!badgeList.querySelector('.badge-card')) {
+            badgeList.innerHTML = '<div class="empty-state">No badges yet. Create one above.</div>';
+          }
+        }, 250);
+      });
+  }
+
+  // ── Copy ──────────────────────────────────────────
+  function handleCopy(btn) {
+    const inp = btn.closest('.embed-row').querySelector('.embed-code');
+    navigator.clipboard.writeText(inp.value).then(() => {
+      btn.classList.add('copied');
+      btn.querySelector('.icon-copy').style.display = 'none';
+      btn.querySelector('.icon-check').style.display = 'block';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.querySelector('.icon-copy').style.display = 'block';
+        btn.querySelector('.icon-check').style.display = 'none';
+      }, 2000);
+    });
+  }
+
+  function bindCard(card) {
+    const copyBtn = card.querySelector('.btn-copy');
+    const delBtn = card.querySelector('.btn-delete');
+    if (copyBtn) copyBtn.addEventListener('click', function() { handleCopy(this); });
+    if (delBtn) delBtn.addEventListener('click', function() { handleDelete(this); });
+  }
+
+  // ── Autocomplete ──────────────────────────────────
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const q = this.value.trim().toLowerCase();
+    if (q.length < 2) { dropdown.classList.remove('visible'); return; }
+    debounceTimer = setTimeout(() => {
+      const matches = areas.filter(a =>
+        a.he.toLowerCase().includes(q)
+        || (a.en && a.en.toLowerCase().includes(q))
+        || (a.ru && a.ru.toLowerCase().includes(q))
+        || (a.ar && a.ar.toLowerCase().includes(q))
+      );
+      if (!matches.length) {
+        dropdown.innerHTML = '<div class="ac-empty">No areas found</div>';
+        dropdown.classList.add('visible');
+        return;
+      }
+      dropdown.innerHTML = matches.slice(0, 20).map(a => {
+        const alts = ['en','ru','ar'].filter(l => a[l]).map(l => a[l]).join(' · ');
+        return '<div class="ac-item" data-value="' + a.he + '">' +
+          '<span class="ac-item-name">' + a.he + (a.en ? ' — ' + a.en : '') + '</span>' +
+          (alts ? '<span class="ac-item-alt">' + alts + '</span>' : '') +
+        '</div>';
+      }).join('');
+      dropdown.classList.add('visible');
+    }, 150);
+  });
+
+  dropdown.addEventListener('click', function(e) {
+    const item = e.target.closest('.ac-item');
+    if (item) { input.value = item.dataset.value; dropdown.classList.remove('visible'); }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#area-group')) dropdown.classList.remove('visible');
+  });
+
+  // Reset on bfcache
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) createBtn.classList.remove('loading');
+  });
+
+  // ── Init ──────────────────────────────────────────
+  init();
+})();
+</script>
+
+</body>
+</html>

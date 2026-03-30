@@ -84,7 +84,7 @@ def _base_url(request: Request) -> str:
 # ── Badge endpoint (public) ───────────────────────────────────────────
 
 @app.get("/badge/{token}.svg")
-async def serve_badge(token: str):
+async def serve_badge(token: str, request: Request):
     badge = db.get_badge_by_token(token)
     if not badge:
         raise HTTPException(404, "Badge not found")
@@ -102,12 +102,19 @@ async def serve_badge(token: str):
             pass
 
     svg = generate_badge(s_24h, s_7d, s_30d, commits)
+
+    # Don't let browsers cache the badge on the dashboard (same-origin);
+    # external embeds (GitHub camo proxy) still respect s-maxage.
+    is_same_origin = request.headers.get("sec-fetch-site", "") in ("same-origin", "same-site")
+    if is_same_origin:
+        cache = "no-cache, no-store"
+    else:
+        cache = "public, max-age=900, s-maxage=900"
+
     return Response(
         content=svg,
         media_type="image/svg+xml",
-        headers={
-            "Cache-Control": "public, max-age=900, s-maxage=900",
-        },
+        headers={"Cache-Control": cache},
     )
 
 

@@ -394,7 +394,7 @@
 
 <!-- ── TopBar ──────────────────────────────────────── -->
 <header class="topbar">
-  <span class="topbar-brand">ShelterStatus</span>
+  <span class="topbar-brand">Deliver <span style="color:#e01e37">No Matter What</span></span>
   <div class="topbar-user">
     <div style="text-align: right;">
       <div class="topbar-name">{{username}}</div>
@@ -599,6 +599,11 @@
   }
 
   document.querySelectorAll('.badge-card').forEach(bindCard);
+
+  // Reset create button when returning via back-button (bfcache)
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) createBtn.classList.remove('loading');
+  });
 })();
 </script>
 

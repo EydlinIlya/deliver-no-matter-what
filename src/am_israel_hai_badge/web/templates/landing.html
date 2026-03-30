@@ -171,8 +171,24 @@
     transition: background 0.2s;
   }
   .btn-github:hover { background: #353534; }
-  .btn-github:active { transform: scale(0.98); }
+  .btn-github:active { transform: scale(0.97); }
   .btn-github svg { width: 24px; height: 24px; fill: currentColor; }
+  .btn-github.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .btn-github .spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #e5e2e1;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  .btn-github.loading .spinner { display: block; }
+  .btn-github.loading svg { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .login-note {
     font-size: 10px;
@@ -327,9 +343,10 @@
       <h2 class="login-title">Sign In</h2>
       <p class="login-desc">Embeddable shelter time badge for your GitHub profile.</p>
 
-      <a href="/auth/login" class="btn-github">
+      <a href="/auth/login" class="btn-github" id="btn-login" onclick="this.classList.add('loading');this.querySelector('.btn-text').textContent='Redirecting...'">
         <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0024 12.297c0-6.627-5.373-12-12-12z"/></svg>
-        Sign in with GitHub
+        <div class="spinner"></div>
+        <span class="btn-text">Sign in with GitHub</span>
       </a>
 
       <p class="login-note">

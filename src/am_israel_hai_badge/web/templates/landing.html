@@ -79,16 +79,70 @@
 
   /* Badge preview */
   .badge-preview {
-    background: #1c1b1b;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .badge-preview svg {
-    width: 100%;
+    background: #f8f9fa;
+    border-radius: 4px;
     max-width: 560px;
-    height: auto;
-    display: block;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    border-left: 4px solid #b10726;
+    border: 1px solid rgba(228, 190, 186, 0.3);
+    border-left: 4px solid #b10726;
+  }
+  .bp-top {
+    padding: 10px 14px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .bp-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #191c1d;
+  }
+  .bp-title span { color: #b10726; }
+  .bp-contrib {
+    font-size: 10px;
+    font-weight: 600;
+    color: #5b403d;
+    letter-spacing: 1px;
+  }
+  .bp-subtitle {
+    padding: 0 14px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5b403d;
+  }
+  .bp-bottom {
+    background: #2e3132;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+    padding: 12px 0 16px;
+  }
+  .bp-col {
+    position: relative;
+  }
+  .bp-col + .bp-col::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(228, 190, 186, 0.15);
+  }
+  .bp-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #e4beba;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .bp-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f0f1f2;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Feature cards */
@@ -303,25 +357,25 @@
     </p>
 
     <div class="badge-preview">
-      <svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120">
-        <rect width="420" height="120" fill="#f8f9fa"/>
-        <rect width="420" height="120" fill="none" stroke="#e4beba" stroke-width="1" rx="2" opacity="0.3"/>
-        <rect x="0" y="0" width="4" height="120" fill="#b10726"/>
-        <text font-family="'Inter', 'Segoe UI', sans-serif" font-size="16" font-weight="800">
-          <tspan x="18" y="28" fill="#191c1d">Deliver </tspan><tspan fill="#b10726">No Matter What</tspan>
-        </text>
-        <text x="406" y="28" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="#5b403d" text-anchor="end" letter-spacing="1">128 contributions / 30d</text>
-        <text x="18" y="46" font-family="'Inter', sans-serif" font-size="13" font-weight="500" fill="#5b403d">Time spent in bomb shelter in:</text>
-        <rect x="4" y="54" width="416" height="66" fill="#2e3132"/>
-        <rect x="144" y="62" width="1" height="50" fill="#e4beba" opacity="0.15"/>
-        <rect x="284" y="62" width="1" height="50" fill="#e4beba" opacity="0.15"/>
-        <text x="74" y="78" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle" letter-spacing="0.5">Last 24 hours</text>
-        <text x="74" y="104" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">0m</text>
-        <text x="214" y="78" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle" letter-spacing="0.5">Last 7 days</text>
-        <text x="214" y="104" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">2h</text>
-        <text x="354" y="78" font-family="'Inter', sans-serif" font-size="10" font-weight="600" fill="#e4beba" text-anchor="middle" letter-spacing="0.5">Last 30 days</text>
-        <text x="354" y="104" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">23h 8m</text>
-      </svg>
+      <div class="bp-top">
+        <div class="bp-title">Deliver <span>No Matter What</span></div>
+        <div class="bp-contrib"><span data-count="128">0</span> contributions / 30d</div>
+      </div>
+      <div class="bp-subtitle">Time spent in bomb shelter in:</div>
+      <div class="bp-bottom">
+        <div class="bp-col">
+          <div class="bp-label">Last 24 hours</div>
+          <div class="bp-value"><span data-count="47" data-suffix="m">0m</span></div>
+        </div>
+        <div class="bp-col">
+          <div class="bp-label">Last 7 days</div>
+          <div class="bp-value"><span data-count="2" data-suffix="h" data-extra=" 14m">0h</span></div>
+        </div>
+        <div class="bp-col">
+          <div class="bp-label">Last 30 days</div>
+          <div class="bp-value"><span data-count="23" data-suffix="h" data-extra=" 8m">0h</span></div>
+        </div>
+      </div>
     </div>
 
     <div class="features">
@@ -364,6 +418,37 @@
     <a href="https://github.com/EydlinIlya/deliver-no-matter-what">GitHub</a>
   </div>
 </footer>
+
+<script>
+(function() {
+  function animateCount(el, duration) {
+    const target = parseInt(el.dataset.count, 10);
+    const suffix = el.dataset.suffix || '';
+    const extra = el.dataset.extra || '';
+    const start = performance.now();
+
+    function tick(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);   // ease-out cubic
+      const val = Math.round(ease * target);
+      el.textContent = val + suffix + (t >= 1 ? extra : '');
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const counters = document.querySelectorAll('[data-count]');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        animateCount(entry.target, 1500);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(function(el) { observer.observe(el); });
+})();
+</script>
 
 </body>
 </html>

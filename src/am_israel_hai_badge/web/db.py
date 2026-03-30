@@ -27,6 +27,12 @@ CREATE TABLE IF NOT EXISTS csv_cache (
     content    TEXT NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS svg_cache (
+    token      TEXT PRIMARY KEY,
+    svg        TEXT NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 _PG_SCHEMA = """\
@@ -48,6 +54,12 @@ CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
 CREATE TABLE IF NOT EXISTS csv_cache (
     name       TEXT PRIMARY KEY,
     content    TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS svg_cache (
+    token      TEXT PRIMARY KEY,
+    svg        TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 """
@@ -185,6 +197,32 @@ class Database:
             "DELETE FROM badges WHERE token = ? AND user_id = ?", (token, user_id),
         )
         return rowcount > 0
+
+    # ── SVG Cache ──────────────────────────────────────────────────────
+
+    def save_svg(self, token: str, svg: str) -> None:
+        """Cache the last generated SVG for a badge."""
+        if self._backend == "pg":
+            self._execute(
+                """INSERT INTO svg_cache (token, svg, updated_at)
+                   VALUES (?, ?, NOW())
+                   ON CONFLICT (token) DO UPDATE
+                   SET svg = EXCLUDED.svg, updated_at = NOW()""",
+                (token, svg),
+            )
+        else:
+            self._execute(
+                """INSERT OR REPLACE INTO svg_cache (token, svg, updated_at)
+                   VALUES (?, ?, CURRENT_TIMESTAMP)""",
+                (token, svg),
+            )
+
+    def load_svg(self, token: str) -> str | None:
+        """Load cached SVG for a badge."""
+        row = self._fetchone(
+            "SELECT svg FROM svg_cache WHERE token = ?", (token,),
+        )
+        return row["svg"] if row else None
 
     # ── CSV Cache ──────────────────────────────────────────────────────
 

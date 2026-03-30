@@ -103,29 +103,37 @@ async def serve_badge(token: str, request: Request):
         raise HTTPException(404, "Badge not found")
 
     area_name = json.loads(badge["area_names"])
-    # Support both old format (list) and new (string)
     if isinstance(area_name, list):
         area_name = area_name[0] if area_name else ""
-    s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_name)
 
-    commits = 0
-    if badge.get("github_login") and badge.get("github_token"):
+    # If cache has data, generate fresh SVG and persist it
+    if alert_cache.record_count > 0:
+        s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_name)
+
+        commits = 0
+        if badge.get("github_login") and badge.get("github_token"):
+            try:
+                commits = fetch_github_commit_count(
+                    badge["github_login"], token=badge["github_token"],
+                )
+            except Exception:
+                pass
+
+        svg = generate_badge(s_24h, s_7d, s_30d, commits)
+
+        # Persist so the badge survives cold starts
         try:
-            commits = fetch_github_commit_count(
-                badge["github_login"], token=badge["github_token"],
-            )
+            db.save_svg(token, svg)
         except Exception:
             pass
-
-    svg = generate_badge(s_24h, s_7d, s_30d, commits)
-
-    # Don't let browsers cache the badge on the dashboard (same-origin);
-    # external embeds (GitHub camo proxy) still respect s-maxage.
-    is_same_origin = request.headers.get("sec-fetch-site", "") in ("same-origin", "same-site")
-    if is_same_origin:
-        cache = "no-cache, no-store"
     else:
-        cache = "public, max-age=900, s-maxage=900"
+        # Cache empty (cold start) — serve last saved SVG
+        svg = db.load_svg(token)
+        if not svg:
+            svg = generate_badge(0, 0, 0, 0)
+
+    is_same_origin = request.headers.get("sec-fetch-site", "") in ("same-origin", "same-site")
+    cache = "no-cache, no-store" if is_same_origin else "public, max-age=900, s-maxage=900"
 
     return Response(
         content=svg,

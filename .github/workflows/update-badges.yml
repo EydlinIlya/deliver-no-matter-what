@@ -1,0 +1,25 @@
+name: Update Badge Data
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Update badge data
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_DIR: /tmp/shelter-data
+        run: python -m am_israel_hai_badge.update_badges

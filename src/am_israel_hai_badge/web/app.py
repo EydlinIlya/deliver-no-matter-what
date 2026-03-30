@@ -23,7 +23,7 @@ from .auth import (
 )
 from .cache import AlertCache
 from .db import Database
-from .worker import start_worker
+from .worker import restore_csvs_from_db, start_worker
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,20 @@ async def lifespan(app: FastAPI):
         db = Database(_DATABASE_URL)
     else:
         db = Database(_DATA_DIR / "shelter.db")
-    _worker_thread, _worker_stop = start_worker(alert_cache)
+
+    # Restore CSV cache from DB on cold start, then populate in-memory cache
+    if restore_csvs_from_db(db, _DATA_DIR):
+        try:
+            from ..api import read_all_cached_records
+            records = read_all_cached_records()
+            alert_cache.refresh(records)
+            logger.info("Cache warmed from DB: %d records", len(records))
+        except Exception:
+            logger.exception("Failed to warm cache from restored CSVs")
+
+    _worker_thread, _worker_stop = start_worker(
+        alert_cache, db=db, data_dir=_DATA_DIR,
+    )
     yield
     if _worker_stop:
         _worker_stop.set()

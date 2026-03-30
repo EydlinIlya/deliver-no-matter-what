@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS badges (
 
 CREATE INDEX IF NOT EXISTS idx_badges_token   ON badges(token);
 CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
+
+CREATE TABLE IF NOT EXISTS csv_cache (
+    name       TEXT PRIMARY KEY,
+    content    TEXT NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 _PG_SCHEMA = """\
@@ -38,6 +44,12 @@ CREATE TABLE IF NOT EXISTS badges (
 
 CREATE INDEX IF NOT EXISTS idx_badges_token   ON badges(token);
 CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
+
+CREATE TABLE IF NOT EXISTS csv_cache (
+    name       TEXT PRIMARY KEY,
+    content    TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 """
 
 
@@ -173,3 +185,29 @@ class Database:
             "DELETE FROM badges WHERE token = ? AND user_id = ?", (token, user_id),
         )
         return rowcount > 0
+
+    # ── CSV Cache ──────────────────────────────────────────────────────
+
+    def save_csv(self, name: str, content: str) -> None:
+        """Persist CSV content in the database."""
+        if self._backend == "pg":
+            self._execute(
+                """INSERT INTO csv_cache (name, content, updated_at)
+                   VALUES (?, ?, NOW())
+                   ON CONFLICT (name) DO UPDATE
+                   SET content = EXCLUDED.content, updated_at = NOW()""",
+                (name, content),
+            )
+        else:
+            self._execute(
+                """INSERT OR REPLACE INTO csv_cache (name, content, updated_at)
+                   VALUES (?, ?, CURRENT_TIMESTAMP)""",
+                (name, content),
+            )
+
+    def load_csv(self, name: str) -> str | None:
+        """Load cached CSV content from the database."""
+        row = self._fetchone(
+            "SELECT content FROM csv_cache WHERE name = ?", (name,),
+        )
+        return row["content"] if row else None

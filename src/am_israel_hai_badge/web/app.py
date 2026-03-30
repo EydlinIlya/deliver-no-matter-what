@@ -89,8 +89,11 @@ async def serve_badge(token: str, request: Request):
     if not badge:
         raise HTTPException(404, "Badge not found")
 
-    area_names = json.loads(badge["area_names"])
-    s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_names)
+    area_name = json.loads(badge["area_names"])
+    # Support both old format (list) and new (string)
+    if isinstance(area_name, list):
+        area_name = area_name[0] if area_name else ""
+    s_24h, s_7d, s_30d = alert_cache.get_badge_data(area_name)
 
     commits = 0
     if badge.get("github_login") and badge.get("github_token"):
@@ -176,7 +179,8 @@ async def dashboard(request: Request):
 
     badge_rows = ""
     for b in badges:
-        areas = ", ".join(json.loads(b["area_names"]))
+        area_raw = json.loads(b["area_names"])
+        areas = area_raw[0] if isinstance(area_raw, list) else area_raw
         url = f"{base}/badge/{b['token']}.svg"
         embed = f"![Time in Shelter]({url})"
         badge_rows += f"""
@@ -231,15 +235,16 @@ async def create_badge(request: Request, areas: str = Form(...)):
     if not user:
         raise HTTPException(401)
 
-    raw_names = [areas.strip()]
-    if not raw_names[0]:
-        raise HTTPException(400, "No areas specified")
+    area = areas.strip()
+    if not area:
+        raise HTTPException(400, "No area specified")
 
-    resolved = resolve_area_names(raw_names)
+    resolved = resolve_area_names([area])
+    area_name = resolved[0]
     badge = db.create_badge(
         user_id=user["uid"],
         github_login=user["login"],
-        area_names=resolved,
+        area_name=area_name,
         github_token=user.get("gh_token", ""),
     )
 
@@ -248,7 +253,7 @@ async def create_badge(request: Request, areas: str = Form(...)):
         base = _base_url(request)
         return {
             "token": badge["token"],
-            "areas": ", ".join(resolved),
+            "areas": area_name,
             "url": f"{base}/badge/{badge['token']}.svg",
         }
     return RedirectResponse("/dashboard", status_code=303)

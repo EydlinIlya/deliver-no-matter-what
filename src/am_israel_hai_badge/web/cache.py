@@ -44,27 +44,32 @@ class AlertCache:
         logger.info("AlertCache refreshed: %d records", len(records))
 
     def get_badge_data(
-        self, area_names: list[str],
+        self, area_name: str,
     ) -> tuple[float, float, float]:
-        """Return (seconds_24h, seconds_7d, seconds_30d) for the given areas."""
-        area_key = frozenset(area_names)
+        """Return (seconds_24h, seconds_7d, seconds_30d) for a single area."""
         now = datetime.now(tz=_TZ)
 
+        # Area names with commas (e.g. "עין חרוד, תל יוסף") get split
+        # by normalize_alert, so we need to match on the sub-parts too
+        match_names = [area_name]
+        for part in area_name.split(","):
+            part = part.strip()
+            if part and part != area_name:
+                match_names.append(part)
+        match_set = set(match_names)
+        cache_key = frozenset(match_names)
+
         with self._lock:
-            if area_key not in self._sessions_cache:
-                # Filter records to these areas, then normalize + compute
-                area_set = set(area_names)
+            if cache_key not in self._sessions_cache:
                 filtered: list[dict] = []
                 for rec in self._all_records:
                     city = rec.get("data", "")
                     cat = rec.get("category", 0)
                     if city == "*":
-                        # Only expand broadcast SAFETY signals
                         if cat != 13:
                             continue
-                        for area in area_names:
-                            filtered.append({**rec, "data": area})
-                    elif city in area_set:
+                        filtered.append({**rec, "data": area_name})
+                    elif city in match_set:
                         filtered.append(rec)
 
                 alerts = []
@@ -73,11 +78,11 @@ class AlertCache:
                         alerts.extend(normalize_alert(rec))
                     except Exception:
                         pass
-                self._sessions_cache[area_key] = compute_sessions(
-                    alerts, area_names,
+                self._sessions_cache[cache_key] = compute_sessions(
+                    alerts, match_names,
                 )
 
-            sessions = self._sessions_cache[area_key]
+            sessions = self._sessions_cache[cache_key]
 
         s_24h = shelter_seconds_in_window(
             sessions, now - timedelta(hours=24), now,

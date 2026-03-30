@@ -141,7 +141,7 @@ class Database:
         self,
         user_id: str,
         github_login: str,
-        area_names: list[str],
+        area_name: str,
         github_token: str = "",
         label: str = "",
         show_commits: bool = False,
@@ -152,7 +152,7 @@ class Database:
             """INSERT INTO badges (user_id, github_login, github_token, token, area_names, label, show_commits)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (user_id, github_login, github_token, token,
-             json.dumps(area_names, ensure_ascii=False), label, int(show_commits)),
+             json.dumps(area_name, ensure_ascii=False), label, int(show_commits)),
         )
         return self.get_badge_by_token(token)  # type: ignore[return-value]
 

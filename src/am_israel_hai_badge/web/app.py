@@ -231,8 +231,8 @@ async def create_badge(request: Request, areas: str = Form(...)):
     if not user:
         raise HTTPException(401)
 
-    raw_names = [a.strip() for a in areas.split(",") if a.strip()]
-    if not raw_names:
+    raw_names = [areas.strip()]
+    if not raw_names[0]:
         raise HTTPException(400, "No areas specified")
 
     resolved = resolve_area_names(raw_names)

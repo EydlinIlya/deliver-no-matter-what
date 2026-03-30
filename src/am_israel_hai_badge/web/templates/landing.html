@@ -311,15 +311,22 @@
 
   /* ── Mobile responsive ──────────────────────────── */
   @media (max-width: 768px) {
+    .hero { padding: 1.5rem 1rem; }
     .hero-grid {
       grid-template-columns: 1fr;
-      gap: 2.5rem;
+      gap: 1.5rem;
       text-align: center;
     }
-    .hero-subtitle { margin-left: auto; margin-right: auto; }
-    .brand-mark { justify-content: center; }
-    .features { grid-template-columns: 1fr; }
-    .login-card { padding: 2rem; }
+    .hero-title { font-size: 2.25rem; margin-bottom: 0.75rem; }
+    .hero-subtitle {
+      margin-left: auto; margin-right: auto;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+    .brand-mark { justify-content: center; margin-bottom: 1rem; }
+    .badge-preview { display: none; }
+    .features { display: none; }
+    .login-card { padding: 1.5rem; }
     footer {
       flex-direction: column;
       gap: 1rem;

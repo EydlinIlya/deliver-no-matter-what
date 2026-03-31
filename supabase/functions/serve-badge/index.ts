@@ -53,17 +53,30 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const { data, error } = await supabase
+  // Try cached data first
+  const { data } = await supabase
     .from("badge_data_cache")
     .select("data")
     .eq("token", token)
     .single();
 
-  if (error || !data) {
-    return new Response("Badge not found", { status: 404 });
+  let s24h = 0, s7d = 0, s30d = 0, commits = 0;
+
+  if (data) {
+    [s24h, s7d, s30d, commits] = JSON.parse(data.data);
+  } else {
+    // No cached data yet — check if badge exists at all
+    const { data: badge } = await supabase
+      .from("badges")
+      .select("token")
+      .eq("token", token)
+      .single();
+    if (!badge) {
+      return new Response("Badge not found", { status: 404 });
+    }
+    // Badge exists but no data yet — show zeros (will populate on next GH Actions run)
   }
 
-  const [s24h, s7d, s30d, commits] = JSON.parse(data.data);
   const svg = generateBadge(s24h, s7d, s30d, commits);
 
   return new Response(svg, {

@@ -22,5 +22,9 @@ DROP POLICY IF EXISTS "Public read area_times" ON area_times;
 CREATE POLICY "Public read area_times" ON area_times
     FOR SELECT USING (true);
 
--- csv_cache: no client access needed (only GH Actions via service key)
+-- csv_cache: no client access needed (only GH Actions via direct PG / service_role)
+-- RLS enabled with deny-all policy to silence Supabase linter
 ALTER TABLE csv_cache ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all client access" ON csv_cache;
+CREATE POLICY "Deny all client access" ON csv_cache
+    FOR ALL USING (false);

@@ -42,7 +42,6 @@ function generateBadge(
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  // Extract token from path: /serve-badge/{token} or /serve-badge/{token}.svg
   const pathParts = url.pathname.split("/");
   let token = pathParts[pathParts.length - 1] || "";
   token = token.replace(/\.svg$/, "");
@@ -53,28 +52,51 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Try cached data first
-  const { data } = await supabase
+  // 1. Look up badge to get area_names
+  const { data: badge } = await supabase
+    .from("badges")
+    .select("area_names")
+    .eq("token", token)
+    .single();
+
+  if (!badge) {
+    return new Response("Badge not found", { status: 404 });
+  }
+
+  // Parse area name
+  let areaName: string;
+  try {
+    const parsed = JSON.parse(badge.area_names);
+    areaName = Array.isArray(parsed) ? parsed[0] : parsed;
+  } catch {
+    areaName = badge.area_names;
+  }
+
+  // 2. Get shelter times from area_times (pre-computed for ALL areas)
+  let s24h = 0, s7d = 0, s30d = 0;
+  const { data: areaData } = await supabase
+    .from("area_times")
+    .select("s_24h, s_7d, s_30d")
+    .eq("area_name", areaName)
+    .single();
+
+  if (areaData) {
+    s24h = areaData.s_24h;
+    s7d = areaData.s_7d;
+    s30d = areaData.s_30d;
+  }
+
+  // 3. Get contribution count from badge_data_cache (per-badge)
+  let commits = 0;
+  const { data: cacheData } = await supabase
     .from("badge_data_cache")
     .select("data")
     .eq("token", token)
     .single();
 
-  let s24h = 0, s7d = 0, s30d = 0, commits = 0;
-
-  if (data) {
-    [s24h, s7d, s30d, commits] = JSON.parse(data.data);
-  } else {
-    // No cached data yet — check if badge exists at all
-    const { data: badge } = await supabase
-      .from("badges")
-      .select("token")
-      .eq("token", token)
-      .single();
-    if (!badge) {
-      return new Response("Badge not found", { status: 404 });
-    }
-    // Badge exists but no data yet — show zeros (will populate on next GH Actions run)
+  if (cacheData) {
+    const vals = JSON.parse(cacheData.data);
+    commits = vals[3] || 0;
   }
 
   const svg = generateBadge(s24h, s7d, s30d, commits);

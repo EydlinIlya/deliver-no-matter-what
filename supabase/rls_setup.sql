@@ -14,7 +14,18 @@ DROP POLICY IF EXISTS "Public read badge_data_cache" ON badge_data_cache;
 CREATE POLICY "Public read badge_data_cache" ON badge_data_cache
     FOR SELECT USING (true);
 
+-- area_times: public read (everyone can see shelter times per area)
+CREATE TABLE IF NOT EXISTS area_times (
+    area_name  TEXT PRIMARY KEY,
+    s_24h      REAL DEFAULT 0,
+    s_7d       REAL DEFAULT 0,
+    s_30d      REAL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE area_times ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read area_times" ON area_times;
+CREATE POLICY "Public read area_times" ON area_times
+    FOR SELECT USING (true);
+
 -- csv_cache: no client access needed (only GH Actions via service key)
 ALTER TABLE csv_cache ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Service only csv_cache" ON csv_cache;
--- No policies = no client access (service key bypasses RLS)

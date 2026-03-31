@@ -29,6 +29,7 @@ def main() -> None:
     os.environ["DATA_DIR"] = str(_DATA_DIR)
 
     from .api import (
+        _fetch_cities_data,
         fetch_github_commit_count,
         read_all_cached_records,
         update_csv_cache,
@@ -56,23 +57,36 @@ def main() -> None:
                 db.save_csv(name, content)
                 logger.info("Saved %s to DB (%d bytes)", name, len(content))
 
-    # 4. Compute shelter times for all badges
+    # 4. Load all records and build cache
     records = read_all_cached_records()
     logger.info("Total records: %d", len(records))
 
     cache = AlertCache()
     cache.refresh(records)
 
-    badges = db._fetchall("SELECT token, area_names, github_login, github_token FROM badges")
-    logger.info("Processing %d badges", len(badges))
+    # 5. Compute shelter times for ALL areas → area_times table
+    try:
+        cities = _fetch_cities_data()
+        all_area_names = [name for name, info in cities.items() if isinstance(info, dict)]
+        logger.info("Computing shelter times for %d areas...", len(all_area_names))
+
+        area_rows: list[tuple[str, float, float, float]] = []
+        for area_name in all_area_names:
+            s_24h, s_7d, s_30d = cache.get_badge_data(area_name)
+            area_rows.append((area_name, s_24h, s_7d, s_30d))
+
+        db.save_area_times_batch(area_rows)
+        nonzero = sum(1 for _, s24, s7, s30 in area_rows if s24 or s7 or s30)
+        logger.info("Saved area_times: %d areas (%d with activity)", len(area_rows), nonzero)
+    except Exception:
+        logger.exception("Failed to compute area_times")
+
+    # 6. Update per-badge contribution counts
+    badges = db._fetchall("SELECT token, github_login, github_token FROM badges")
+    logger.info("Updating contributions for %d badges", len(badges))
 
     for badge in badges:
         token = badge["token"]
-        area_raw = json.loads(badge["area_names"])
-        area_name = area_raw[0] if isinstance(area_raw, list) else area_raw
-
-        s_24h, s_7d, s_30d = cache.get_badge_data(area_name)
-
         commits = 0
         gh_login = badge.get("github_login", "")
         gh_token = badge.get("github_token", "")
@@ -82,11 +96,9 @@ def main() -> None:
             except Exception:
                 pass
 
-        db.save_badge_data(token, s_24h, s_7d, s_30d, commits)
-        logger.info(
-            "  %s (%s): 24h=%dm 7d=%.1fh 30d=%.1fh commits=%d",
-            token, area_name, s_24h / 60, s_7d / 3600, s_30d / 3600, commits,
-        )
+        # Store only commits in badge_data_cache
+        db.save_badge_data(token, 0, 0, 0, commits)
+        logger.info("  %s: commits=%d", token, commits)
 
     db.close()
     logger.info("Done.")

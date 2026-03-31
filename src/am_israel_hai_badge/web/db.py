@@ -33,6 +33,14 @@ CREATE TABLE IF NOT EXISTS badge_data_cache (
     data       TEXT NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS area_times (
+    area_name  TEXT PRIMARY KEY,
+    s_24h      REAL DEFAULT 0,
+    s_7d       REAL DEFAULT 0,
+    s_30d      REAL DEFAULT 0,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 _PG_SCHEMA = """\
@@ -60,6 +68,14 @@ CREATE TABLE IF NOT EXISTS csv_cache (
 CREATE TABLE IF NOT EXISTS badge_data_cache (
     token      TEXT PRIMARY KEY,
     data       TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS area_times (
+    area_name  TEXT PRIMARY KEY,
+    s_24h      REAL DEFAULT 0,
+    s_7d       REAL DEFAULT 0,
+    s_30d      REAL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 """
@@ -227,6 +243,27 @@ class Database:
             return None
         vals = json.loads(row["data"])
         return vals[0], vals[1], vals[2], int(vals[3])
+
+    # ── Area Times (pre-computed per-area shelter seconds) ─────────
+
+    def save_area_times_batch(self, rows: list[tuple[str, float, float, float]]) -> None:
+        """Bulk upsert area shelter times. Each row: (area_name, s_24h, s_7d, s_30d)."""
+        for area_name, s_24h, s_7d, s_30d in rows:
+            if self._backend == "pg":
+                self._execute(
+                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
+                       VALUES (?, ?, ?, ?, NOW())
+                       ON CONFLICT (area_name) DO UPDATE
+                       SET s_24h = EXCLUDED.s_24h, s_7d = EXCLUDED.s_7d,
+                           s_30d = EXCLUDED.s_30d, updated_at = NOW()""",
+                    (area_name, s_24h, s_7d, s_30d),
+                )
+            else:
+                self._execute(
+                    """INSERT OR REPLACE INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
+                       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                    (area_name, s_24h, s_7d, s_30d),
+                )
 
     # ── CSV Cache ──────────────────────────────────────────────────────
 

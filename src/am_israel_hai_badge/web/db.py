@@ -7,17 +7,13 @@ from pathlib import Path
 
 _SQLITE_SCHEMA = """\
 CREATE TABLE IF NOT EXISTS badges (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id      TEXT    NOT NULL,
     github_login TEXT    NOT NULL DEFAULT '',
-    token        TEXT    UNIQUE NOT NULL,
+    token        TEXT    PRIMARY KEY,
     area_name    TEXT    NOT NULL,
-    label        TEXT,
-    show_commits INTEGER DEFAULT 0,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_badges_token   ON badges(token);
 CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
 
 CREATE TABLE IF NOT EXISTS csv_cache (
@@ -43,17 +39,13 @@ CREATE TABLE IF NOT EXISTS area_times (
 
 _PG_SCHEMA = """\
 CREATE TABLE IF NOT EXISTS badges (
-    id           SERIAL PRIMARY KEY,
     user_id      UUID    NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     github_login TEXT    NOT NULL DEFAULT '',
-    token        TEXT    UNIQUE NOT NULL,
+    token        TEXT    PRIMARY KEY,
     area_name    TEXT    NOT NULL,
-    label        TEXT,
-    show_commits INTEGER DEFAULT 0,
     created_at   TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_badges_token   ON badges(token);
 CREATE INDEX IF NOT EXISTS idx_badges_user_id ON badges(user_id);
 
 CREATE TABLE IF NOT EXISTS csv_cache (
@@ -174,15 +166,13 @@ class Database:
         user_id: str,
         github_login: str,
         area_name: str,
-        label: str = "",
-        show_commits: bool = False,
     ) -> dict:
         """Create a new badge with a unique token. Returns the badge row."""
         token = secrets.token_urlsafe(12)
         self._execute(
-            """INSERT INTO badges (user_id, github_login, token, area_name, label, show_commits)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (user_id, github_login, token, area_name, label, int(show_commits)),
+            """INSERT INTO badges (user_id, github_login, token, area_name)
+               VALUES (?, ?, ?, ?)""",
+            (user_id, github_login, token, area_name),
         )
         return self.get_badge_by_token(token)  # type: ignore[return-value]
 

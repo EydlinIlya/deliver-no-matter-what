@@ -142,8 +142,6 @@
     padding: 2rem; margin-bottom: 1.25rem; transition: background 0.2s;
   }
   .badge-card:hover { background: #201f1f; }
-  .badge-card-preview { margin-bottom: 1.25rem; }
-  .badge-card-preview img { width: 100%; max-width: 600px; height: auto; border-radius: 4px; }
 
   .badge-card-meta {
     display: flex; align-items: center; justify-content: space-between;
@@ -180,6 +178,61 @@
     padding: 3rem; text-align: center;
     color: #9a9b9c; font-size: 0.95rem;
   }
+
+  /* ── Badge preview skeleton ─────────────────────── */
+  .badge-card-preview {
+    position: relative; min-height: 120px;
+  }
+  .badge-card-preview .preview-spinner {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 24px; height: 24px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: #e01e37;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  .badge-card-preview img { width: 100%; max-width: 600px; height: auto; border-radius: 4px; }
+  .badge-card-preview img.loaded + .preview-spinner { display: none; }
+
+  .embed-hint {
+    font-size: 11px; color: #6a6b6c; margin-top: 0.35rem;
+  }
+
+  /* ── Custom confirm dialog ──────────────────────── */
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeInOverlay 0.15s ease;
+  }
+  @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+  .confirm-box {
+    background: #1c1b1b; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 2rem; max-width: 380px; width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .confirm-title {
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .confirm-text {
+    font-size: 0.85rem; color: #9a9b9c; margin-bottom: 1.5rem; line-height: 1.5;
+  }
+  .confirm-actions { display: flex; gap: 0.75rem; justify-content: center; }
+  .confirm-cancel, .confirm-delete {
+    padding: 0.65rem 1.5rem; border-radius: 8px; border: none;
+    font-family: inherit; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .confirm-cancel {
+    background: #2a2a2a; color: #e5e2e1;
+  }
+  .confirm-cancel:hover { background: #353534; }
+  .confirm-delete {
+    background: #e01e37; color: #fff;
+  }
+  .confirm-delete:hover { filter: brightness(1.1); }
 
   .ac-dropdown::-webkit-scrollbar { width: 6px; }
   .ac-dropdown::-webkit-scrollbar-track { background: transparent; }
@@ -351,7 +404,8 @@
     const embed = '![Time in Shelter](' + badgeUrl + ')';
     return '<div class="badge-card" data-token="' + token + '">' +
       '<div class="badge-card-preview">' +
-        '<img src="' + badgeUrl + '" alt="badge"/>' +
+        '<img src="' + badgeUrl + '" alt="badge" onload="this.classList.add(\'loaded\')"/>' +
+        '<div class="preview-spinner"></div>' +
       '</div>' +
       '<div class="badge-card-meta">' +
         '<div class="badge-card-area">' + escapeHtml(areasText) + '</div>' +
@@ -367,6 +421,7 @@
               '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
             '</button>' +
           '</div>' +
+          '<div class="embed-hint">Paste into your GitHub README.md or any Markdown file</div>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -423,25 +478,56 @@
     createBtn.classList.remove('loading');
   });
 
+  // ── Custom confirm dialog ─────────────────────────
+  function showConfirm(title, text) {
+    return new Promise(function(resolve) {
+      const overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML =
+        '<div class="confirm-box">' +
+          '<div class="confirm-title">' + title + '</div>' +
+          '<div class="confirm-text">' + text + '</div>' +
+          '<div class="confirm-actions">' +
+            '<button class="confirm-cancel">Cancel</button>' +
+            '<button class="confirm-delete">Delete</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      overlay.querySelector('.confirm-cancel').addEventListener('click', function() {
+        overlay.remove(); resolve(false);
+      });
+      overlay.querySelector('.confirm-delete').addEventListener('click', function() {
+        overlay.remove(); resolve(true);
+      });
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) { overlay.remove(); resolve(false); }
+      });
+    });
+  }
+
   // ── Delete badge ──────────────────────────────────
-  function handleDelete(btn) {
+  async function handleDelete(btn) {
     const token = btn.dataset.token;
-    if (!confirm('Delete this badge?')) return;
+    const area = btn.closest('.badge-card').querySelector('.badge-card-area');
+    const areaName = area ? area.textContent : 'this badge';
+    const confirmed = await showConfirm(
+      'Delete Badge',
+      'Remove the badge for <strong>' + areaName + '</strong>? This cannot be undone.'
+    );
+    if (!confirmed) return;
+
     const card = btn.closest('.badge-card');
     card.classList.add('removing');
 
-    sb.from('badges').delete().eq('token', token).eq('user_id', currentUser.id)
-      .then(({ error }) => {
-        if (error) { card.classList.remove('removing'); return; }
-        // Also clean up badge_data_cache
-        sb.from('badge_data_cache').delete().eq('token', token).then(() => {});
-        setTimeout(() => {
-          card.remove();
-          if (!badgeList.querySelector('.badge-card')) {
-            badgeList.innerHTML = '<div class="empty-state">No badges yet. Create one above.</div>';
-          }
-        }, 250);
-      });
+    const { error } = await sb.from('badges').delete().eq('token', token).eq('user_id', currentUser.id);
+    if (error) { card.classList.remove('removing'); return; }
+    sb.from('badge_data_cache').delete().eq('token', token).then(() => {});
+    setTimeout(() => {
+      card.remove();
+      if (!badgeList.querySelector('.badge-card')) {
+        badgeList.innerHTML = '<div class="empty-state">No badges yet. Create one above.</div>';
+      }
+    }, 250);
   }
 
   // ── Copy ──────────────────────────────────────────

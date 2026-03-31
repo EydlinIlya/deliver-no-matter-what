@@ -81,18 +81,18 @@ def main() -> None:
     except Exception:
         logger.exception("Failed to compute area_times")
 
-    # 6. Update per-badge contribution counts
-    badges = db._fetchall("SELECT token, github_login, github_token FROM badges")
+    # 6. Update per-badge contribution counts (using bot PAT, not per-user tokens)
+    gh_pat = os.environ.get("GH_PAT", "")
+    badges = db._fetchall("SELECT token, github_login FROM badges")
     logger.info("Updating contributions for %d badges", len(badges))
 
     for badge in badges:
         token = badge["token"]
         commits = 0
         gh_login = badge.get("github_login", "")
-        gh_token = badge.get("github_token", "")
-        if gh_login and gh_token:
+        if gh_login and gh_pat:
             try:
-                commits = fetch_github_commit_count(gh_login, token=gh_token)
+                commits = fetch_github_commit_count(gh_login, token=gh_pat)
             except Exception:
                 pass
 

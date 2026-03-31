@@ -2,11 +2,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ghPat = Deno.env.get("GH_PAT") || "";
 
 async function fetchGitHubContributions(
   login: string,
-  token: string,
 ): Promise<number> {
+  if (!ghPat) return 0;
   const now = new Date();
   const from = new Date(now.getTime() - 30 * 86400_000);
   const query = JSON.stringify({
@@ -20,7 +21,7 @@ async function fetchGitHubContributions(
   const resp = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${ghPat}`,
       "Content-Type": "application/json",
       "User-Agent": "deliver-no-matter-what/0.1",
     },
@@ -59,10 +60,10 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Look up badge
+  // Look up badge (only need github_login — no token stored)
   const { data: badge } = await supabase
     .from("badges")
-    .select("github_login, github_token")
+    .select("github_login")
     .eq("token", token)
     .single();
 
@@ -73,13 +74,10 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Fetch contributions
+  // Fetch contributions using bot PAT
   let commits = 0;
-  if (badge.github_login && badge.github_token) {
-    commits = await fetchGitHubContributions(
-      badge.github_login,
-      badge.github_token,
-    );
+  if (badge.github_login) {
+    commits = await fetchGitHubContributions(badge.github_login);
   }
 
   // Store in badge_data_cache

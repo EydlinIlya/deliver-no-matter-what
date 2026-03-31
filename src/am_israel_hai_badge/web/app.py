@@ -267,7 +267,6 @@ async def create_badge(request: Request, areas: str = Form(...)):
         user_id=user["uid"],
         github_login=user["login"],
         area_name=area_name,
-        github_token=user.get("gh_token", ""),
     )
 
     # AJAX: return JSON with badge info

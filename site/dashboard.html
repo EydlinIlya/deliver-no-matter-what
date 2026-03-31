@@ -334,8 +334,6 @@
     if (avatar) document.getElementById('avatar').src = avatar;
     document.getElementById('user-info').style.display = '';
 
-    // Store provider_token for badge creation
-    currentUser._providerToken = session.provider_token || '';
     currentUser._login = login;
 
     await loadBadges();
@@ -454,7 +452,6 @@
     const { error } = await sb.from('badges').insert({
       user_id: currentUser.id,
       github_login: currentUser._login,
-      github_token: currentUser._providerToken,
       token: token,
       area_names: JSON.stringify(area),
     });

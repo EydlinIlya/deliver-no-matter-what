@@ -352,7 +352,7 @@
   async function loadBadges() {
     const { data: badges, error } = await sb
       .from('badges')
-      .select('token, area_names, created_at')
+      .select('token, area_name, created_at')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
@@ -368,9 +368,7 @@
 
     badgeList.innerHTML = '';
     badges.forEach(b => {
-      const areaRaw = JSON.parse(b.area_names);
-      const area = Array.isArray(areaRaw) ? areaRaw[0] : areaRaw;
-      badgeList.insertAdjacentHTML('beforeend', badgeCardHTML(b.token, area));
+      badgeList.insertAdjacentHTML('beforeend', badgeCardHTML(b.token, b.area_name));
       bindCard(badgeList.lastElementChild);
     });
   }
@@ -453,7 +451,7 @@
       user_id: currentUser.id,
       github_login: currentUser._login,
       token: token,
-      area_names: JSON.stringify(area),
+      area_name: area,
     });
 
     if (error) {
@@ -524,7 +522,6 @@
 
     const { error } = await sb.from('badges').delete().eq('token', token).eq('user_id', currentUser.id);
     if (error) { card.classList.remove('removing'); return; }
-    sb.from('badge_data_cache').delete().eq('token', token).then(() => {});
     setTimeout(() => {
       card.remove();
       if (!badgeList.querySelector('.badge-card')) {

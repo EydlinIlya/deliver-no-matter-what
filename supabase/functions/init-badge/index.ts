@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
   // Store in badge_data_cache
   await supabase.from("badge_data_cache").upsert({
     token,
-    data: JSON.stringify([0, 0, 0, commits]),
+    commits,
     updated_at: new Date().toISOString(),
   });
 

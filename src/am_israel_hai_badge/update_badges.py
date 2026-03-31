@@ -4,7 +4,6 @@ Reuses existing code — no new logic. Connects to Supabase PostgreSQL via DATAB
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 import sys
@@ -96,8 +95,7 @@ def main() -> None:
             except Exception:
                 pass
 
-        # Store only commits in badge_data_cache
-        db.save_badge_data(token, 0, 0, 0, commits)
+        db.save_badge_data(token, commits)
         logger.info("  %s: commits=%d", token, commits)
 
     db.close()

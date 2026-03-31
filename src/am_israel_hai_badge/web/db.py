@@ -1,7 +1,6 @@
 """Database layer for badges — supports PostgreSQL (Supabase) and SQLite."""
 from __future__ import annotations
 
-import json
 import secrets
 import threading
 from pathlib import Path
@@ -12,7 +11,7 @@ CREATE TABLE IF NOT EXISTS badges (
     user_id      TEXT    NOT NULL,
     github_login TEXT    NOT NULL DEFAULT '',
     token        TEXT    UNIQUE NOT NULL,
-    area_names   TEXT    NOT NULL,
+    area_name    TEXT    NOT NULL,
     label        TEXT,
     show_commits INTEGER DEFAULT 0,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
@@ -28,8 +27,8 @@ CREATE TABLE IF NOT EXISTS csv_cache (
 );
 
 CREATE TABLE IF NOT EXISTS badge_data_cache (
-    token      TEXT PRIMARY KEY,
-    data       TEXT NOT NULL,
+    token      TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
+    commits    INTEGER DEFAULT 0,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -45,10 +44,10 @@ CREATE TABLE IF NOT EXISTS area_times (
 _PG_SCHEMA = """\
 CREATE TABLE IF NOT EXISTS badges (
     id           SERIAL PRIMARY KEY,
-    user_id      TEXT    NOT NULL,
+    user_id      UUID    NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     github_login TEXT    NOT NULL DEFAULT '',
     token        TEXT    UNIQUE NOT NULL,
-    area_names   TEXT    NOT NULL,
+    area_name    TEXT    NOT NULL,
     label        TEXT,
     show_commits INTEGER DEFAULT 0,
     created_at   TIMESTAMP DEFAULT NOW()
@@ -64,8 +63,8 @@ CREATE TABLE IF NOT EXISTS csv_cache (
 );
 
 CREATE TABLE IF NOT EXISTS badge_data_cache (
-    token      TEXT PRIMARY KEY,
-    data       TEXT NOT NULL,
+    token      TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
+    commits    INTEGER DEFAULT 0,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -181,10 +180,9 @@ class Database:
         """Create a new badge with a unique token. Returns the badge row."""
         token = secrets.token_urlsafe(12)
         self._execute(
-            """INSERT INTO badges (user_id, github_login, token, area_names, label, show_commits)
+            """INSERT INTO badges (user_id, github_login, token, area_name, label, show_commits)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (user_id, github_login, token,
-             json.dumps(area_name, ensure_ascii=False), label, int(show_commits)),
+            (user_id, github_login, token, area_name, label, int(show_commits)),
         )
         return self.get_badge_by_token(token)  # type: ignore[return-value]
 
@@ -208,33 +206,29 @@ class Database:
 
     # ── Badge Data Cache ─────────────────────────────────────────────
 
-    def save_badge_data(self, token: str, s_24h: float, s_7d: float, s_30d: float, commits: int) -> None:
-        """Cache the last computed badge data (4 numbers, ~40 bytes)."""
-        data = json.dumps([s_24h, s_7d, s_30d, commits])
+    def save_badge_data(self, token: str, commits: int) -> None:
+        """Cache the contribution count for a badge."""
         if self._backend == "pg":
             self._execute(
-                """INSERT INTO badge_data_cache (token, data, updated_at)
+                """INSERT INTO badge_data_cache (token, commits, updated_at)
                    VALUES (?, ?, NOW())
                    ON CONFLICT (token) DO UPDATE
-                   SET data = EXCLUDED.data, updated_at = NOW()""",
-                (token, data),
+                   SET commits = EXCLUDED.commits, updated_at = NOW()""",
+                (token, commits),
             )
         else:
             self._execute(
-                """INSERT OR REPLACE INTO badge_data_cache (token, data, updated_at)
+                """INSERT OR REPLACE INTO badge_data_cache (token, commits, updated_at)
                    VALUES (?, ?, CURRENT_TIMESTAMP)""",
-                (token, data),
+                (token, commits),
             )
 
-    def load_badge_data(self, token: str) -> tuple[float, float, float, int] | None:
-        """Load cached badge data. Returns (s_24h, s_7d, s_30d, commits) or None."""
+    def load_badge_commits(self, token: str) -> int:
+        """Load cached contribution count for a badge."""
         row = self._fetchone(
-            "SELECT data FROM badge_data_cache WHERE token = ?", (token,),
+            "SELECT commits FROM badge_data_cache WHERE token = ?", (token,),
         )
-        if not row:
-            return None
-        vals = json.loads(row["data"])
-        return vals[0], vals[1], vals[2], int(vals[3])
+        return row["commits"] if row else 0
 
     # ── Area Times (pre-computed per-area shelter seconds) ─────────
 

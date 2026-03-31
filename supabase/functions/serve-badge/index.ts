@@ -52,10 +52,10 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Look up badge to get area_names
+  // 1. Look up badge to get area_name
   const { data: badge } = await supabase
     .from("badges")
-    .select("area_names")
+    .select("area_name")
     .eq("token", token)
     .single();
 
@@ -63,21 +63,12 @@ Deno.serve(async (req) => {
     return new Response("Badge not found", { status: 404 });
   }
 
-  // Parse area name
-  let areaName: string;
-  try {
-    const parsed = JSON.parse(badge.area_names);
-    areaName = Array.isArray(parsed) ? parsed[0] : parsed;
-  } catch {
-    areaName = badge.area_names;
-  }
-
   // 2. Get shelter times from area_times (pre-computed for ALL areas)
   let s24h = 0, s7d = 0, s30d = 0;
   const { data: areaData } = await supabase
     .from("area_times")
     .select("s_24h, s_7d, s_30d")
-    .eq("area_name", areaName)
+    .eq("area_name", badge.area_name)
     .single();
 
   if (areaData) {
@@ -90,13 +81,12 @@ Deno.serve(async (req) => {
   let commits = 0;
   const { data: cacheData } = await supabase
     .from("badge_data_cache")
-    .select("data")
+    .select("commits")
     .eq("token", token)
     .single();
 
   if (cacheData) {
-    const vals = JSON.parse(cacheData.data);
-    commits = vals[3] || 0;
+    commits = cacheData.commits || 0;
   }
 
   const svg = generateBadge(s24h, s7d, s30d, commits);

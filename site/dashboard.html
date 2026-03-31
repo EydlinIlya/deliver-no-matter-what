@@ -465,12 +465,14 @@
       return;
     }
 
-    // Initialize badge data (fetch contributions immediately)
-    fetch(SUPABASE_URL + '/functions/v1/init-badge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    }).catch(() => {});
+    // Initialize badge data (fetch contributions) before rendering
+    try {
+      await fetch(SUPABASE_URL + '/functions/v1/init-badge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+    } catch(e) {}
 
     // Remove empty state
     const empty = badgeList.querySelector('.empty-state');

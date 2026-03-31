@@ -202,6 +202,21 @@
     font-size: 11px; color: #6a6b6c; margin-top: 0.35rem;
   }
 
+  /* ── Footer ──────────────────────────────────────── */
+  .dashboard-footer {
+    max-width: 960px; margin: 0 auto;
+    padding: 3rem 1.5rem 2rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .footer-title {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.15em; color: #e01e37; margin-bottom: 0.75rem;
+  }
+  .footer-text {
+    font-size: 0.8rem; color: #6a6b6c; line-height: 1.7;
+  }
+  .footer-text strong { color: #9a9b9c; font-weight: 600; }
+
   /* ── Custom confirm dialog ──────────────────────── */
   .confirm-overlay {
     position: fixed; inset: 0; z-index: 200;
@@ -298,6 +313,17 @@
     <div id="badge-list"></div>
   </div>
 </main>
+
+<footer class="dashboard-footer">
+  <div class="footer-title">How shelter time is calculated</div>
+  <p class="footer-text">
+    An <strong>alert</strong> for your area starts a shelter session.
+    The session ends on a <strong>safety signal</strong>, or auto-closes <strong>10 min</strong> after the last alert
+    if no further alerts arrive within <strong>45 min</strong>.
+    Sessions crossing time window boundaries are clipped, not dropped.
+    Contributions are your public GitHub activity in the last 30 days.
+  </p>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>

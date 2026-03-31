@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install package
-        run: pip install -e ".[web]"
+        run: pip install -e .
 
       - name: Update badge data
         env:

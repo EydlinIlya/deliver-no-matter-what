@@ -6,8 +6,8 @@ import threading
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..normalize import normalize_alert
-from ..shelter import compute_sessions, shelter_seconds_in_window
+from .normalize import normalize_alert
+from .shelter import compute_sessions, shelter_seconds_in_window
 
 logger = logging.getLogger(__name__)
 _TZ = ZoneInfo("Asia/Jerusalem")

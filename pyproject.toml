@@ -2,10 +2,7 @@
 name = "am_israel_hai_badge"
 version = "0.1.0"
 requires-python = ">= 3.11.9"
-dependencies = []
-
-[project.optional-dependencies]
-web = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "python-multipart>=0.0.9", "psycopg2-binary>=2.9"]
+dependencies = ["psycopg2-binary>=2.9"]
 
 [build-system]
 requires = ["setuptools"]
@@ -13,6 +10,3 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"am_israel_hai_badge.web" = ["templates/*.html"]

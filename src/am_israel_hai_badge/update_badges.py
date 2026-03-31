@@ -33,14 +33,22 @@ def main() -> None:
         read_all_cached_records,
         update_csv_cache,
     )
-    from .web.cache import AlertCache
-    from .web.db import Database
-    from .web.worker import restore_csvs_from_db
+    from .cache import AlertCache
+    from .db import Database
 
     db = Database(database_url)
 
     # 1. Restore CSVs from DB (incremental sync — pick up where we left off)
-    restored = restore_csvs_from_db(db, _DATA_DIR)
+    _CSV_NAMES = ("tzevaadom_alerts.csv", "tzevaadom_messages.csv")
+    restored = False
+    for name in _CSV_NAMES:
+        path = _DATA_DIR / name
+        if path.exists() and path.stat().st_size > 0:
+            continue
+        content = db.load_csv(name)
+        if content:
+            path.write_text(content, encoding="utf-8")
+            restored = True
     logger.info("CSV restore: %s", "restored from DB" if restored else "no prior data")
 
     # 2. Fetch new alerts from tzevaadom API (incremental)

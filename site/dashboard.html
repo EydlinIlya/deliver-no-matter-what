@@ -181,18 +181,22 @@
 
   /* ── Badge preview skeleton ─────────────────────── */
   .badge-card-preview {
-    position: relative; min-height: 120px;
+    position: relative; min-height: 120px; margin-bottom: 1.25rem;
   }
-  .badge-card-preview .preview-spinner {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 24px; height: 24px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: #e01e37;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
+  .badge-card-preview .preview-skeleton {
+    width: 100%; max-width: 600px; height: 120px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #1c1b1b 25%, #2a2929 50%, #1c1b1b 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
   }
-  .badge-card-preview img { width: 100%; max-width: 600px; height: auto; border-radius: 4px; }
-  .badge-card-preview img.loaded + .preview-spinner { display: none; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .badge-card-preview img {
+    width: 100%; max-width: 600px; height: auto; border-radius: 4px;
+    display: none;
+  }
+  .badge-card-preview img.loaded { display: block; }
+  .badge-card-preview img.loaded ~ .preview-skeleton { display: none; }
 
   .embed-hint {
     font-size: 11px; color: #6a6b6c; margin-top: 0.35rem;
@@ -405,7 +409,7 @@
     return '<div class="badge-card" data-token="' + token + '">' +
       '<div class="badge-card-preview">' +
         '<img src="' + badgeUrl + '" alt="badge" onload="this.classList.add(\'loaded\')"/>' +
-        '<div class="preview-spinner"></div>' +
+        '<div class="preview-skeleton"></div>' +
       '</div>' +
       '<div class="badge-card-meta">' +
         '<div class="badge-card-area">' + escapeHtml(areasText) + '</div>' +

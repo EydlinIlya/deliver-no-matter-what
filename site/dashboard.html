@@ -211,54 +211,35 @@
     font-size: 11px; color: #6a6b6c; margin-top: 0.35rem;
   }
 
-  /* ── Contact overlay ─────────────────────────────── */
-  .contact-overlay {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeInOverlay 0.15s ease;
+  /* ── Info sections ───────────────────────────────── */
+  .info-sections {
+    max-width: 960px; margin: 0 auto;
+    padding: 2rem 1.5rem 1rem;
+    display: flex; gap: 1.5rem;
   }
-  .contact-box {
-    background: #1c1b1b; border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px; padding: 2rem; max-width: 340px; width: 90%;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-    text-align: center;
+  .info-section {
+    flex: 1; background: #1c1b1b; border-radius: 12px; padding: 1.5rem;
   }
-  .contact-title {
-    font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem;
+  .info-section-title {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.15em; color: #e01e37; margin-bottom: 0.75rem;
   }
-  .contact-links { display: flex; flex-direction: column; gap: 0.75rem; }
+  .info-text {
+    font-size: 0.8rem; color: #6a6b6c; line-height: 1.7;
+  }
+  .info-text strong { color: #9a9b9c; font-weight: 600; }
+  .contact-links { display: flex; gap: 1rem; margin-top: 0.5rem; }
   .contact-link {
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    padding: 0.75rem 1.5rem; border-radius: 8px;
-    background: #2a2a2a; color: #e5e2e1;
-    text-decoration: none; font-size: 0.85rem; font-weight: 600;
-    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    color: #9a9b9c; text-decoration: none; font-size: 0.8rem; font-weight: 500;
+    transition: color 0.15s;
   }
-  .contact-link:hover { background: #353534; }
-  .contact-link svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+  .contact-link:hover { color: #e5e2e1; }
+  .contact-link svg { width: 16px; height: 16px; fill: currentColor; }
 
-  /* ── How we calculate overlay ───────────────────── */
-  .calc-overlay {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeInOverlay 0.15s ease;
+  @media (max-width: 640px) {
+    .info-sections { flex-direction: column; }
   }
-  .calc-box {
-    background: #1c1b1b; border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px; padding: 2rem; max-width: 460px; width: 90%;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-  }
-  .calc-title {
-    font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; text-align: center;
-  }
-  .calc-text {
-    font-size: 0.8rem; color: #9a9b9c; line-height: 1.7;
-  }
-  .calc-text strong { color: #e5e2e1; font-weight: 600; }
 
   /* ── Footer ──────────────────────────────────────── */
   .dashboard-footer {
@@ -322,8 +303,8 @@
   <span class="topbar-brand">Deliver <span style="color:#e01e37">No Matter What</span></span>
   <div style="display:flex; align-items:center; gap:1.5rem;">
     <nav class="topbar-links">
-      <button class="topbar-link" id="btn-how">How we calculate</button>
-      <button class="topbar-link" id="btn-contact">Contact</button>
+      <a class="topbar-link" href="#how-we-calculate">How we calculate</a>
+      <a class="topbar-link" href="#contact">Contact</a>
     </nav>
     <div class="topbar-user" id="user-info" style="display:none">
       <div style="text-align: right;">
@@ -371,6 +352,32 @@
     <div id="badge-list"></div>
   </div>
 </main>
+
+<div class="info-sections">
+  <section class="info-section" id="how-we-calculate">
+    <div class="info-section-title">How we calculate</div>
+    <p class="info-text">
+      An <strong>alert</strong> for your area starts a shelter session.
+      The session ends on a <strong>safety signal</strong>, or auto-closes <strong>10 min</strong> after the last alert
+      if no further alerts arrive within <strong>45 min</strong>.
+      Sessions crossing time window boundaries are clipped, not dropped.
+      Contributions are your public GitHub activity in the last 30 days.
+    </p>
+  </section>
+  <section class="info-section" id="contact">
+    <div class="info-section-title">Contact</div>
+    <div class="contact-links">
+      <a class="contact-link" href="mailto:eli.eydlin@gmail.com">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        eli.eydlin@gmail.com
+      </a>
+      <a class="contact-link" href="https://github.com/EydlinIlya/deliver-no-matter-what" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </section>
+</div>
 
 <footer class="dashboard-footer">Israel 2026</footer>
 
@@ -662,51 +669,6 @@
 
   document.addEventListener('click', function(e) {
     if (!e.target.closest('#area-group')) dropdown.classList.remove('visible');
-  });
-
-  // ── How we calculate overlay ─────────────────────
-  document.getElementById('btn-how').addEventListener('click', function() {
-    const overlay = document.createElement('div');
-    overlay.className = 'calc-overlay';
-    overlay.innerHTML =
-      '<div class="calc-box">' +
-        '<div class="calc-title">How shelter time is calculated</div>' +
-        '<p class="calc-text">' +
-          'An <strong>alert</strong> for your area starts a shelter session. ' +
-          'The session ends on a <strong>safety signal</strong>, or auto-closes <strong>10 min</strong> after the last alert ' +
-          'if no further alerts arrive within <strong>45 min</strong>. ' +
-          'Sessions crossing time window boundaries are clipped, not dropped. ' +
-          'Contributions are your public GitHub activity in the last 30 days.' +
-        '</p>' +
-      '</div>';
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) overlay.remove();
-    });
-  });
-
-  // ── Contact overlay ────────────────────────────────
-  document.getElementById('btn-contact').addEventListener('click', function() {
-    const overlay = document.createElement('div');
-    overlay.className = 'contact-overlay';
-    overlay.innerHTML =
-      '<div class="contact-box">' +
-        '<div class="contact-title">Contact</div>' +
-        '<div class="contact-links">' +
-          '<a class="contact-link" href="mailto:eli.eydlin@gmail.com">' +
-            '<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>' +
-            'eli.eydlin@gmail.com' +
-          '</a>' +
-          '<a class="contact-link" href="https://github.com/EydlinIlya/deliver-no-matter-what" target="_blank">' +
-            '<svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>' +
-            'GitHub' +
-          '</a>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) overlay.remove();
-    });
   });
 
   // Reset on bfcache

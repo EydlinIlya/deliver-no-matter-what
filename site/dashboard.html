@@ -20,15 +20,6 @@
     padding: 1rem 1.5rem; background: #131313;
   }
   .topbar-brand { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; }
-  .topbar-user { display: flex; align-items: center; gap: 0.75rem; }
-  .topbar-user img { width: 40px; height: 40px; border-radius: 50%; }
-  .topbar-name { font-size: 0.85rem; font-weight: 700; }
-  .btn-logout {
-    font-size: 11px; font-weight: 500; text-transform: uppercase;
-    letter-spacing: 0.15em; color: #e01e37;
-    background: none; border: none; cursor: pointer; transition: color 0.15s;
-  }
-  .btn-logout:hover { color: #ffb3b1; }
 
   .topbar-right { display: flex; align-items: center; gap: 1.5rem; }
   .topbar-links { display: flex; gap: 1.25rem; align-items: center; }
@@ -40,46 +31,49 @@
   }
   .topbar-link:hover { color: #e5e2e1; }
 
-  /* ── Burger menu (mobile) ──────────────────────── */
-  .burger {
-    display: none; background: none; border: none; cursor: pointer;
-    width: 32px; height: 32px; position: relative; z-index: 60;
+  .topbar-user { display: flex; align-items: center; gap: 0.75rem; }
+  .topbar-avatar {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s;
   }
-  .burger span {
-    display: block; width: 20px; height: 2px; background: #e5e2e1;
-    margin: 4px auto; border-radius: 1px; transition: all 0.25s;
+  .topbar-avatar:hover { border-color: rgba(224,30,55,0.4); }
+  .topbar-name { font-size: 0.85rem; font-weight: 700; }
+  .topbar-name-block { text-align: right; }
+  .btn-logout {
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.15em; color: #e01e37;
+    background: none; border: none; cursor: pointer; transition: color 0.15s;
   }
-  .burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-  .burger.open span:nth-child(2) { opacity: 0; }
-  .burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .btn-logout:hover { color: #ffb3b1; }
 
-  .mobile-menu {
-    display: none; position: fixed; inset: 0; z-index: 55;
-    background: rgba(19,19,19,0.97);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
+  /* ── Avatar dropdown (mobile + desktop) ────────── */
+  .avatar-wrap { position: relative; }
+  .avatar-dropdown {
+    display: none; position: absolute; top: calc(100% + 0.5rem); right: 0;
+    background: #1c1b1b; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 0.5rem; min-width: 200px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 100;
   }
-  .mobile-menu.open { display: flex; }
-  .mobile-menu a {
-    font-size: 1.25rem; font-weight: 600; color: #e5e2e1;
-    text-decoration: none; transition: color 0.15s;
+  .avatar-dropdown.open { display: block; }
+  .avatar-dropdown a,
+  .avatar-dropdown button {
+    display: flex; align-items: center; gap: 0.5rem; width: 100%;
+    padding: 0.65rem 0.75rem; border-radius: 8px; border: none;
+    background: none; color: #e5e2e1; font-family: inherit;
+    font-size: 0.85rem; font-weight: 500; text-decoration: none;
+    cursor: pointer; transition: background 0.15s;
   }
-  .mobile-menu a:hover { color: #e01e37; }
-  .mobile-menu button {
-    font-size: 1.25rem; font-weight: 600; color: #e01e37;
-    background: none; border: none; cursor: pointer;
+  .avatar-dropdown a:hover,
+  .avatar-dropdown button:hover { background: rgba(255,255,255,0.05); }
+  .avatar-dropdown .dropdown-logout { color: #e01e37; }
+  .avatar-dropdown svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+  .avatar-dropdown hr {
+    border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 0.25rem 0;
   }
 
   @media (max-width: 640px) {
-    .burger { display: block; }
     .topbar-links { display: none; }
-    .topbar-user { display: none; }
-    .topbar-right .topbar-user,
-    .topbar-right .topbar-links { display: none; }
-    .topbar-right .burger { display: block; }
-  }
-  @media (min-width: 641px) {
-    .mobile-menu { display: none !important; }
+    .topbar-name-block { display: none; }
   }
 
   .content { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem; }
@@ -343,23 +337,31 @@
       <a class="topbar-link" href="#contact">Contact</a>
     </nav>
     <div class="topbar-user" id="user-info" style="display:none">
-      <div style="text-align: right;">
+      <div class="topbar-name-block">
         <div class="topbar-name" id="username"></div>
         <button class="btn-logout" id="btn-logout">Log out</button>
       </div>
-      <img id="avatar" src="" alt="avatar"/>
+      <div class="avatar-wrap">
+        <img class="topbar-avatar" id="avatar" src="" alt="avatar" tabindex="0"/>
+        <div class="avatar-dropdown" id="avatar-dropdown">
+          <a href="#how-we-calculate">
+            <svg viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+            How we calculate
+          </a>
+          <a href="#contact">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            Contact
+          </a>
+          <hr/>
+          <button class="dropdown-logout" id="dropdown-logout">
+            <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+            Log out
+          </button>
+        </div>
+      </div>
     </div>
-    <button class="burger" id="burger-btn">
-      <span></span><span></span><span></span>
-    </button>
   </div>
 </header>
-
-<div class="mobile-menu" id="mobile-menu">
-  <a href="#how-we-calculate" class="mobile-menu-link">How we calculate</a>
-  <a href="#contact" class="mobile-menu-link">Contact</a>
-  <button id="mobile-logout" style="display:none">Log out</button>
-</div>
 
 <main class="content">
   <h1 class="page-title">Your <span>Badges</span></h1>
@@ -460,7 +462,6 @@
     document.getElementById('username').textContent = login;
     if (avatar) document.getElementById('avatar').src = avatar;
     document.getElementById('user-info').style.display = '';
-    document.getElementById('mobile-logout').style.display = '';
 
     currentUser._login = login;
 
@@ -476,22 +477,21 @@
     window.location.href = '/';
   });
 
-  // ── Burger menu ────────────────────────────────────
-  var burgerBtn = document.getElementById('burger-btn');
-  var mobileMenu = document.getElementById('mobile-menu');
-  var mobileLogout = document.getElementById('mobile-logout');
+  // ── Avatar dropdown ────────────────────────────────
+  var avatarImg = document.getElementById('avatar');
+  var avatarDropdown = document.getElementById('avatar-dropdown');
 
-  burgerBtn.addEventListener('click', function() {
-    burgerBtn.classList.toggle('open');
-    mobileMenu.classList.toggle('open');
+  avatarImg.addEventListener('click', function(e) {
+    e.stopPropagation();
+    avatarDropdown.classList.toggle('open');
   });
-  mobileMenu.querySelectorAll('a').forEach(function(link) {
-    link.addEventListener('click', function() {
-      burgerBtn.classList.remove('open');
-      mobileMenu.classList.remove('open');
-    });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.avatar-wrap')) avatarDropdown.classList.remove('open');
   });
-  mobileLogout.addEventListener('click', async function() {
+  avatarDropdown.querySelectorAll('a').forEach(function(link) {
+    link.addEventListener('click', function() { avatarDropdown.classList.remove('open'); });
+  });
+  document.getElementById('dropdown-logout').addEventListener('click', async function() {
     await sb.auth.signOut();
     window.location.href = '/';
   });

@@ -39,7 +39,7 @@
   }
   .topbar-link:hover { color: #e5e2e1; }
 
-  .content { max-width: 960px; margin: 0 auto; padding: 3rem 1.5rem; }
+  .content { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem; }
   .page-title {
     font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900;
     letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.75rem;
@@ -213,22 +213,19 @@
 
   /* ── Info sections ───────────────────────────────── */
   .info-sections {
-    max-width: 960px; margin: 0 auto;
-    padding: 2rem 1.5rem 1rem;
-    display: flex; gap: 1.5rem;
+    max-width: 1200px; margin: 0 auto;
+    padding: 2rem 1.5rem 0;
   }
-  .info-section {
-    flex: 1; background: #1c1b1b; border-radius: 12px; padding: 1.5rem;
-  }
+  .info-section { margin-bottom: 1.5rem; }
   .info-section-title {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.15em; color: #e01e37; margin-bottom: 0.75rem;
+    letter-spacing: 0.15em; color: #e01e37; margin-bottom: 0.5rem;
   }
   .info-text {
     font-size: 0.8rem; color: #6a6b6c; line-height: 1.7;
   }
   .info-text strong { color: #9a9b9c; font-weight: 600; }
-  .contact-links { display: flex; gap: 1rem; margin-top: 0.5rem; }
+  .contact-links { display: flex; gap: 1.25rem; }
   .contact-link {
     display: inline-flex; align-items: center; gap: 0.4rem;
     color: #9a9b9c; text-decoration: none; font-size: 0.8rem; font-weight: 500;
@@ -237,13 +234,9 @@
   .contact-link:hover { color: #e5e2e1; }
   .contact-link svg { width: 16px; height: 16px; fill: currentColor; }
 
-  @media (max-width: 640px) {
-    .info-sections { flex-direction: column; }
-  }
-
   /* ── Footer ──────────────────────────────────────── */
   .dashboard-footer {
-    max-width: 960px; margin: 0 auto;
+    max-width: 1200px; margin: 0 auto;
     padding: 2rem 1.5rem;
     text-align: center;
     color: #4a4b4c; font-size: 0.75rem;
@@ -357,7 +350,7 @@
   <section class="info-section" id="how-we-calculate">
     <div class="info-section-title">How we calculate</div>
     <p class="info-text">
-      An <strong>alert</strong> for your area starts a shelter session.
+      A <strong>Be ready</strong> or <strong>alert</strong> signal for your area starts a shelter session.
       The session ends on a <strong>safety signal</strong>, or auto-closes <strong>10 min</strong> after the last alert
       if no further alerts arrive within <strong>45 min</strong>.
       Sessions crossing time window boundaries are clipped, not dropped.

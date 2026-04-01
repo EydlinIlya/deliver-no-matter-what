@@ -21,23 +21,66 @@
   }
   .topbar-brand { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; }
   .topbar-user { display: flex; align-items: center; gap: 0.75rem; }
-  .topbar-user img { width: 36px; height: 36px; border-radius: 50%; }
-  .topbar-name { font-size: 0.8rem; font-weight: 700; }
+  .topbar-user img { width: 40px; height: 40px; border-radius: 50%; }
+  .topbar-name { font-size: 0.85rem; font-weight: 700; }
   .btn-logout {
-    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
     letter-spacing: 0.15em; color: #e01e37;
     background: none; border: none; cursor: pointer; transition: color 0.15s;
   }
   .btn-logout:hover { color: #ffb3b1; }
 
-  .topbar-links { display: flex; gap: 1rem; align-items: center; }
+  .topbar-right { display: flex; align-items: center; gap: 1.5rem; }
+  .topbar-links { display: flex; gap: 1.25rem; align-items: center; }
   .topbar-link {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.12em; color: #9a9b9c;
+    font-size: 0.8rem; font-weight: 600;
+    color: #9a9b9c;
     background: none; border: none; cursor: pointer;
     text-decoration: none; transition: color 0.15s;
   }
   .topbar-link:hover { color: #e5e2e1; }
+
+  /* ── Burger menu (mobile) ──────────────────────── */
+  .burger {
+    display: none; background: none; border: none; cursor: pointer;
+    width: 32px; height: 32px; position: relative; z-index: 60;
+  }
+  .burger span {
+    display: block; width: 20px; height: 2px; background: #e5e2e1;
+    margin: 4px auto; border-radius: 1px; transition: all 0.25s;
+  }
+  .burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .burger.open span:nth-child(2) { opacity: 0; }
+  .burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  .mobile-menu {
+    display: none; position: fixed; inset: 0; z-index: 55;
+    background: rgba(19,19,19,0.97);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a {
+    font-size: 1.25rem; font-weight: 600; color: #e5e2e1;
+    text-decoration: none; transition: color 0.15s;
+  }
+  .mobile-menu a:hover { color: #e01e37; }
+  .mobile-menu button {
+    font-size: 1.25rem; font-weight: 600; color: #e01e37;
+    background: none; border: none; cursor: pointer;
+  }
+
+  @media (max-width: 640px) {
+    .burger { display: block; }
+    .topbar-links { display: none; }
+    .topbar-user { display: none; }
+    .topbar-right .topbar-user,
+    .topbar-right .topbar-links { display: none; }
+    .topbar-right .burger { display: block; }
+  }
+  @media (min-width: 641px) {
+    .mobile-menu { display: none !important; }
+  }
 
   .content { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem; }
   .page-title {
@@ -294,7 +337,7 @@
 
 <header class="topbar">
   <span class="topbar-brand">Deliver <span style="color:#e01e37">No Matter What</span></span>
-  <div style="display:flex; align-items:center; gap:1.5rem;">
+  <div class="topbar-right">
     <nav class="topbar-links">
       <a class="topbar-link" href="#how-we-calculate">How we calculate</a>
       <a class="topbar-link" href="#contact">Contact</a>
@@ -306,8 +349,17 @@
       </div>
       <img id="avatar" src="" alt="avatar"/>
     </div>
+    <button class="burger" id="burger-btn">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
+
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#how-we-calculate" class="mobile-menu-link">How we calculate</a>
+  <a href="#contact" class="mobile-menu-link">Contact</a>
+  <button id="mobile-logout" style="display:none">Log out</button>
+</div>
 
 <main class="content">
   <h1 class="page-title">Your <span>Badges</span></h1>
@@ -408,6 +460,7 @@
     document.getElementById('username').textContent = login;
     if (avatar) document.getElementById('avatar').src = avatar;
     document.getElementById('user-info').style.display = '';
+    document.getElementById('mobile-logout').style.display = '';
 
     currentUser._login = login;
 
@@ -419,6 +472,26 @@
   }
 
   document.getElementById('btn-logout').addEventListener('click', async function() {
+    await sb.auth.signOut();
+    window.location.href = '/';
+  });
+
+  // ── Burger menu ────────────────────────────────────
+  var burgerBtn = document.getElementById('burger-btn');
+  var mobileMenu = document.getElementById('mobile-menu');
+  var mobileLogout = document.getElementById('mobile-logout');
+
+  burgerBtn.addEventListener('click', function() {
+    burgerBtn.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  mobileMenu.querySelectorAll('a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      burgerBtn.classList.remove('open');
+      mobileMenu.classList.remove('open');
+    });
+  });
+  mobileLogout.addEventListener('click', async function() {
     await sb.auth.signOut();
     window.location.href = '/';
   });

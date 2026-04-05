@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#131313"/>
+
+  <!-- Subtle grid dots -->
+  <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="0.8" fill="#333"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- Left red accent bar -->
+  <rect x="0" y="0" width="5" height="630" fill="#e01e37"/>
+
+  <!-- Title -->
+  <text x="100" y="260" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="72" font-weight="900" letter-spacing="-2" fill="#e5e2e1">Deliver</text>
+  <text x="100" y="340" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="72" font-weight="900" letter-spacing="-2" fill="#e01e37">No Matter What</text>
+
+  <!-- Subtitle -->
+  <text x="100" y="410" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="500" fill="#c5c7c8">GitHub badge showing shelter time + contributions</text>
+</svg>

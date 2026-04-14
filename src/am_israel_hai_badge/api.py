@@ -106,8 +106,16 @@ def _fetch_json(url: str) -> dict | list | None:
     return None
 
 
+_API_MAX_GAP = 50  # consecutive 404s to skip over before declaring the end
+
+
 def _find_api_max(base_url: str, floor: int) -> int:
-    """Find the current API max by probing forward from a known floor ID."""
+    """Find the current API max by probing forward from a known floor ID.
+
+    The tzevaadom alerts API has gaps in its ID space (runs of 404s between
+    valid IDs).  We skip over up to _API_MAX_GAP consecutive non-200 responses
+    before deciding we've reached the true end.
+    """
     status, _ = _http_get(f"{base_url}/{floor}")
     if status != 200:
         found = False
@@ -121,19 +129,28 @@ def _find_api_max(base_url: str, floor: int) -> int:
             return floor
 
     current = floor
-    while True:
-        status, _ = _http_get(f"{base_url}/{current + 1}")
+    best = floor
+    misses = 0
+    while misses <= _API_MAX_GAP:
+        probe = current + 1
+        status, _ = _http_get(f"{base_url}/{probe}")
         if status == 200:
-            current += 1
+            best = probe
+            current = probe
+            misses = 0
         elif status == 0:
             time.sleep(1)
-            s2, _ = _http_get(f"{base_url}/{current + 1}")
-            current = current + 1 if s2 == 200 else current
-            if s2 != 200:
-                break
+            s2, _ = _http_get(f"{base_url}/{probe}")
+            if s2 == 200:
+                best = probe
+                current = probe
+                misses = 0
+            else:
+                break  # network error — give up
         else:
-            break
-    return current
+            current = probe
+            misses += 1
+    return best
 
 
 # --------------------------------------------------------------------------- #

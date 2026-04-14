@@ -337,11 +337,12 @@ def _rows_from_alert_id(alert_id: int) -> list[list]:
         return []
     rows = []
     for wave in data.get("alerts", []):
-        cat = _THREAT_TO_CAT.get(wave.get("threat"))
+        threat = wave.get("threat")
+        cat = _THREAT_TO_CAT.get(threat, 1)  # default to ACTIVE_ALERT for unknown threats
         if cat is None:
             continue
         ts = datetime.fromtimestamp(wave["time"], tz=_TZ).strftime("%Y-%m-%dT%H:%M:%S")
-        title = "ירי רקטות וטילים" if wave.get("threat") == 0 else "חדירת כלי טיס עוין"
+        title = "ירי רקטות וטילים" if threat == 0 else "חדירת כלי טיס עוין"
         for city in wave.get("cities", []):
             rows.append([ts, city, alert_id, cat, title])
     return rows
@@ -366,7 +367,8 @@ def _update_alerts_csv(
             time.sleep(_REQUEST_DELAY)
             has_recent = False
             for wave in data.get("alerts", []):
-                cat = _THREAT_TO_CAT.get(wave.get("threat"))
+                threat = wave.get("threat")
+                cat = _THREAT_TO_CAT.get(threat, 1)  # default to ACTIVE_ALERT for unknown threats
                 if cat is None:
                     continue
                 ts_dt = datetime.fromtimestamp(wave["time"], tz=_TZ)
@@ -374,7 +376,7 @@ def _update_alerts_csv(
                     continue
                 has_recent = True
                 ts = ts_dt.strftime("%Y-%m-%dT%H:%M:%S")
-                title = "ירי רקטות וטילים" if wave.get("threat") == 0 else "חדירת כלי טיס עוין"
+                title = "ירי רקטות וטילים" if threat == 0 else "חדירת כלי טיס עוין"
                 for city in wave.get("cities", []):
                     buffer.append([ts, city, alert_id, cat, title])
             if not has_recent:

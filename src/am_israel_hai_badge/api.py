@@ -564,12 +564,22 @@ def fetch_all_areas_history(area_names: list[str]) -> list[dict]:
     return all_records
 
 
-def fetch_github_contribution_count(username: str, days: int = 30, token: str = "") -> int:
+def fetch_github_contribution_count(
+    username: str,
+    days: int = 30,
+    token: str = "",
+    from_dt: str = "",
+    to_dt: str = "",
+) -> int:
     """Count all GitHub contributions (commits, PRs, issues, reviews) in last N days.
 
     Uses ``contributionCalendar.totalContributions`` — the same number as the
     green squares on a GitHub profile.  Includes private activity when querying
     with the user's own OAuth token.
+
+    When *from_dt* and *to_dt* are supplied (ISO-8601 strings, e.g.
+    ``"2026-02-28T00:00:00Z"``), they are used directly instead of computing
+    the range from *days*.
     """
     if not username:
         return 0
@@ -587,9 +597,13 @@ def fetch_github_contribution_count(username: str, days: int = 30, token: str = 
                 logger.warning("No GitHub token available, skipping contribution count")
                 return 0
 
-    now = datetime.now(tz=timezone.utc)
-    from_date = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    to_date = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if from_dt and to_dt:
+        from_date = from_dt
+        to_date = to_dt
+    else:
+        now = datetime.now(tz=timezone.utc)
+        from_date = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        to_date = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     query = json.dumps({"query": (
         '{ user(login: "' + username + '") {'

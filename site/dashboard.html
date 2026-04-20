@@ -557,27 +557,52 @@
   // ── Badge card HTML ───────────────────────────────
   function badgeCardHTML(token, areasText) {
     const badgeUrl = EDGE_FN_BASE + '/' + token;
-    const embed = '![Time in Shelter](' + badgeUrl + ')';
+    const warUrl   = badgeUrl + '?war=1';
+    const embed    = '![Time in Shelter](' + badgeUrl + ')';
+    const warEmbed = '![War Contributions](' + warUrl + ')';
     return '<div class="badge-card" data-token="' + token + '">' +
-      '<div class="badge-card-preview">' +
-        '<img src="' + badgeUrl + '" alt="badge" onload="this.classList.add(\'loaded\')"/>' +
-        '<div class="preview-skeleton"></div>' +
+      // Two previews side by side
+      '<div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">' +
+        '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
+          '<div class="embed-label" style="margin-bottom:0.35rem">Shelter time badge</div>' +
+          '<img src="' + badgeUrl + '" alt="badge" onload="this.classList.add(\'loaded\')"/>' +
+          '<div class="preview-skeleton"></div>' +
+        '</div>' +
+        '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
+          '<div class="embed-label" style="margin-bottom:0.35rem">War contributions badge</div>' +
+          '<img src="' + warUrl + '" alt="war badge" onload="this.classList.add(\'loaded\')"/>' +
+          '<div class="preview-skeleton"></div>' +
+        '</div>' +
       '</div>' +
       '<div class="badge-card-meta">' +
         '<div class="badge-card-area">' + escapeHtml(areasText) + '</div>' +
-        '<div class="embed-group">' +
-          '<div class="embed-label">Embed Code</div>' +
-          '<div class="embed-row">' +
-            '<input type="text" value="' + escapeAttr(embed) + '" readonly onclick="this.select()" class="embed-code"/>' +
-            '<button type="button" class="btn-icon btn-copy" title="Copy">' +
-              '<svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
-              '<svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
-            '</button>' +
-            '<button type="button" class="btn-icon btn-delete" title="Delete" data-token="' + token + '">' +
-              '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
-            '</button>' +
+        '<div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:0.6rem">' +
+          // Standard embed
+          '<div class="embed-group">' +
+            '<div class="embed-label">Shelter badge embed</div>' +
+            '<div class="embed-row">' +
+              '<input type="text" value="' + escapeAttr(embed) + '" readonly onclick="this.select()" class="embed-code"/>' +
+              '<button type="button" class="btn-icon btn-copy" title="Copy">' +
+                '<svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+                '<svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
+              '</button>' +
+              '<button type="button" class="btn-icon btn-delete" title="Delete" data-token="' + token + '">' +
+                '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
+              '</button>' +
+            '</div>' +
           '</div>' +
-          '<div class="embed-hint">Paste into your GitHub README.md or any Markdown file</div>' +
+          // War badge embed
+          '<div class="embed-group">' +
+            '<div class="embed-label">War badge embed</div>' +
+            '<div class="embed-row">' +
+              '<input type="text" value="' + escapeAttr(warEmbed) + '" readonly onclick="this.select()" class="embed-code" style="color:#93c5fd"/>' +
+              '<button type="button" class="btn-icon btn-copy" title="Copy">' +
+                '<svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+                '<svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="embed-hint">Paste into your GitHub README.md or any Markdown file</div>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -702,9 +727,10 @@
   }
 
   function bindCard(card) {
-    const copyBtn = card.querySelector('.btn-copy');
+    card.querySelectorAll('.btn-copy').forEach(function(btn) {
+      btn.addEventListener('click', function() { handleCopy(this); });
+    });
     const delBtn = card.querySelector('.btn-delete');
-    if (copyBtn) copyBtn.addEventListener('click', function() { handleCopy(this); });
     if (delBtn) delBtn.addEventListener('click', function() { handleDelete(this); });
   }
 

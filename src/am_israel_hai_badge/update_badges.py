@@ -12,6 +12,9 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
+_WAR_FROM = "2026-02-26T00:00:00Z"
+_WAR_TO   = "2026-04-16T23:59:59Z"
+
 # DATA_DIR for CSV temp storage (ephemeral in GH Actions runner)
 _DATA_DIR = Path(os.environ.get("DATA_DIR", "/tmp/shelter-data"))
 
@@ -77,13 +80,14 @@ def main() -> None:
         all_area_names = [name for name, info in cities.items() if isinstance(info, dict)]
         logger.info("Computing shelter times for %d areas...", len(all_area_names))
 
-        area_rows: list[tuple[str, float, float, float]] = []
+        area_rows: list[tuple[str, float, float, float, float]] = []
         for area_name in all_area_names:
             s_24h, s_7d, s_30d = cache.get_badge_data(area_name)
-            area_rows.append((area_name, s_24h, s_7d, s_30d))
+            s_war = cache.get_war_shelter_time(area_name)
+            area_rows.append((area_name, s_24h, s_7d, s_30d, s_war))
 
         db.save_area_times_batch(area_rows)
-        nonzero = sum(1 for _, s24, s7, s30 in area_rows if s24 or s7 or s30)
+        nonzero = sum(1 for _, s24, s7, s30, sw in area_rows if s24 or s7 or s30 or sw)
         logger.info("Saved area_times: %d areas (%d with activity)", len(area_rows), nonzero)
     except Exception:
         logger.exception("Failed to compute area_times")
@@ -103,8 +107,16 @@ def main() -> None:
             except Exception:
                 pass
 
-        db.save_badge_data(token, commits)
-        logger.info("  %s: commits=%d", token, commits)
+        war_commits = 0
+        if gh_login and gh_pat:
+            try:
+                war_commits = fetch_github_commit_count(gh_login, token=gh_pat,
+                                                        from_dt=_WAR_FROM, to_dt=_WAR_TO)
+            except Exception:
+                pass
+
+        db.save_badge_data(token, commits, war_commits)
+        logger.info("  %s: commits=%d war_commits=%d", token, commits, war_commits)
 
     db.close()
     logger.info("Done.")

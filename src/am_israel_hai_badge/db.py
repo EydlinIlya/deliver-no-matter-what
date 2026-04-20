@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS csv_cache (
 );
 
 CREATE TABLE IF NOT EXISTS badge_data_cache (
-    token      TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
-    commits    INTEGER DEFAULT 0,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    token       TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
+    commits     INTEGER DEFAULT 0,
+    war_commits INTEGER DEFAULT 0,
+    updated_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS area_times (
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS area_times (
     s_24h      REAL DEFAULT 0,
     s_7d       REAL DEFAULT 0,
     s_30d      REAL DEFAULT 0,
+    s_war      REAL DEFAULT 0,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -55,9 +57,10 @@ CREATE TABLE IF NOT EXISTS csv_cache (
 );
 
 CREATE TABLE IF NOT EXISTS badge_data_cache (
-    token      TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
-    commits    INTEGER DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT NOW()
+    token       TEXT PRIMARY KEY REFERENCES badges(token) ON DELETE CASCADE,
+    commits     INTEGER DEFAULT 0,
+    war_commits INTEGER DEFAULT 0,
+    updated_at  TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS area_times (
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS area_times (
     s_24h      REAL DEFAULT 0,
     s_7d       REAL DEFAULT 0,
     s_30d      REAL DEFAULT 0,
+    s_war      REAL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 """
@@ -97,6 +101,9 @@ class Database:
         self._conn.autocommit = True
         with self._conn.cursor() as cur:
             cur.execute(_PG_SCHEMA)
+            cur.execute(
+                "ALTER TABLE area_times ADD COLUMN IF NOT EXISTS s_war REAL DEFAULT 0"
+            )
 
     def _init_sqlite(self, path: str) -> None:
         import sqlite3
@@ -196,21 +203,22 @@ class Database:
 
     # ── Badge Data Cache ─────────────────────────────────────────────
 
-    def save_badge_data(self, token: str, commits: int) -> None:
+    def save_badge_data(self, token: str, commits: int, war_commits: int = 0) -> None:
         """Cache the contribution count for a badge."""
         if self._backend == "pg":
             self._execute(
-                """INSERT INTO badge_data_cache (token, commits, updated_at)
-                   VALUES (?, ?, NOW())
+                """INSERT INTO badge_data_cache (token, commits, war_commits, updated_at)
+                   VALUES (?, ?, ?, NOW())
                    ON CONFLICT (token) DO UPDATE
-                   SET commits = EXCLUDED.commits, updated_at = NOW()""",
-                (token, commits),
+                   SET commits = EXCLUDED.commits, war_commits = EXCLUDED.war_commits,
+                       updated_at = NOW()""",
+                (token, commits, war_commits),
             )
         else:
             self._execute(
-                """INSERT OR REPLACE INTO badge_data_cache (token, commits, updated_at)
-                   VALUES (?, ?, CURRENT_TIMESTAMP)""",
-                (token, commits),
+                """INSERT OR REPLACE INTO badge_data_cache (token, commits, war_commits, updated_at)
+                   VALUES (?, ?, ?, CURRENT_TIMESTAMP)""",
+                (token, commits, war_commits),
             )
 
     def load_badge_commits(self, token: str) -> int:
@@ -220,25 +228,33 @@ class Database:
         )
         return row["commits"] if row else 0
 
+    def load_badge_war_commits(self, token: str) -> int:
+        """Load cached war-period contribution count for a badge."""
+        row = self._fetchone(
+            "SELECT war_commits FROM badge_data_cache WHERE token = ?", (token,),
+        )
+        return row["war_commits"] if row else 0
+
     # ── Area Times (pre-computed per-area shelter seconds) ─────────
 
-    def save_area_times_batch(self, rows: list[tuple[str, float, float, float]]) -> None:
-        """Bulk upsert area shelter times. Each row: (area_name, s_24h, s_7d, s_30d)."""
-        for area_name, s_24h, s_7d, s_30d in rows:
+    def save_area_times_batch(self, rows: list[tuple[str, float, float, float, float]]) -> None:
+        """Bulk upsert area shelter times. Each row: (area_name, s_24h, s_7d, s_30d, s_war)."""
+        for area_name, s_24h, s_7d, s_30d, s_war in rows:
             if self._backend == "pg":
                 self._execute(
-                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
-                       VALUES (?, ?, ?, ?, NOW())
+                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, s_war, updated_at)
+                       VALUES (?, ?, ?, ?, ?, NOW())
                        ON CONFLICT (area_name) DO UPDATE
                        SET s_24h = EXCLUDED.s_24h, s_7d = EXCLUDED.s_7d,
-                           s_30d = EXCLUDED.s_30d, updated_at = NOW()""",
-                    (area_name, s_24h, s_7d, s_30d),
+                           s_30d = EXCLUDED.s_30d, s_war = EXCLUDED.s_war,
+                           updated_at = NOW()""",
+                    (area_name, s_24h, s_7d, s_30d, s_war),
                 )
             else:
                 self._execute(
-                    """INSERT OR REPLACE INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
-                       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
-                    (area_name, s_24h, s_7d, s_30d),
+                    """INSERT OR REPLACE INTO area_times (area_name, s_24h, s_7d, s_30d, s_war, updated_at)
+                       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                    (area_name, s_24h, s_7d, s_30d, s_war),
                 )
 
     # ── CSV Cache ──────────────────────────────────────────────────────

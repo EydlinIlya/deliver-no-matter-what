@@ -6,6 +6,9 @@ import threading
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+_WAR_START = datetime(2026, 2, 26, 0, 0, 0, tzinfo=ZoneInfo("Asia/Jerusalem"))
+_WAR_END   = datetime(2026, 4, 16, 23, 59, 59, tzinfo=ZoneInfo("Asia/Jerusalem"))
+
 from .normalize import normalize_alert
 from .shelter import compute_sessions, shelter_seconds_in_window
 
@@ -94,3 +97,38 @@ class AlertCache:
             sessions, now - timedelta(days=30), now,
         )
         return s_24h, s_7d, s_30d
+
+    def get_war_shelter_time(self, area_name: str) -> float:
+        """Return shelter seconds for the war period (Feb 26 – Apr 16, 2026)."""
+        match_names = [area_name]
+        for part in area_name.split(","):
+            part = part.strip()
+            if part and part != area_name:
+                match_names.append(part)
+        cache_key = frozenset(match_names)
+
+        with self._lock:
+            if cache_key not in self._sessions_cache:
+                match_set = set(match_names)
+                filtered: list[dict] = []
+                for rec in self._all_records:
+                    city = rec.get("data", "")
+                    cat = rec.get("category", 0)
+                    if city == "*":
+                        if cat != 13:
+                            continue
+                        filtered.append({**rec, "data": area_name})
+                    elif city in match_set:
+                        filtered.append(rec)
+
+                alerts = []
+                for rec in filtered:
+                    try:
+                        alerts.extend(normalize_alert(rec))
+                    except Exception:
+                        pass
+                self._sessions_cache[cache_key] = compute_sessions(alerts, match_names)
+
+            sessions = self._sessions_cache[cache_key]
+
+        return shelter_seconds_in_window(sessions, _WAR_START, _WAR_END)

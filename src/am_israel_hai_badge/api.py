@@ -208,12 +208,14 @@ def _append_rows(path: Path, rows: list[list]) -> None:
 
 def _read_records(
     path: Path, area_set: set[str] | None, since: datetime,
+    until: datetime | None = None,
 ) -> list[dict]:
     """Read CSV and return oref-compatible dicts.
 
     When *area_set* is ``None`` every record is returned (no area filter,
     broadcast rows kept as-is with ``city="*"``).  When a set is given the
     old per-area filtering + broadcast expansion logic applies.
+    Records outside ``[since, until]`` are skipped (``until`` open if None).
     """
     if not path.exists():
         return []
@@ -227,6 +229,8 @@ def _read_records(
                 except Exception:
                     continue
                 if ts < since:
+                    continue
+                if until is not None and ts > until:
                     continue
 
                 # --- unfiltered mode (web service cache) ---
@@ -704,13 +708,16 @@ def update_csv_cache() -> None:
         )
 
 
-def read_all_cached_records(since: datetime | None = None) -> list[dict]:
+def read_all_cached_records(
+    since: datetime | None = None, until: datetime | None = None,
+) -> list[dict]:
     """Read ALL records from cached CSVs, unfiltered by area.
 
     Used by the web service to populate the in-memory AlertCache.
+    ``until`` caps the upper bound (e.g. the fixed end of the war window).
     """
     if since is None:
         since = datetime.now(tz=_TZ) - timedelta(days=_SCAN_WINDOW_DAYS)
-    alerts = _read_records(_ALERTS_CSV, None, since)
-    messages = _read_records(_MESSAGES_CSV, None, since)
+    alerts = _read_records(_ALERTS_CSV, None, since, until)
+    messages = _read_records(_MESSAGES_CSV, None, since, until)
     return alerts + messages

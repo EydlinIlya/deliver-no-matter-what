@@ -243,24 +243,51 @@ class Database:
 
     # ── Area Times (pre-computed per-area shelter seconds) ─────────
 
-    def save_area_times_batch(self, rows: list[tuple[str, float, float, float, float]]) -> None:
-        """Bulk upsert area shelter times. Each row: (area_name, s_24h, s_7d, s_30d, s_war)."""
-        for area_name, s_24h, s_7d, s_30d, s_war in rows:
+    def save_area_rolling_times_batch(self, rows: list[tuple[str, float, float, float]]) -> None:
+        """Bulk upsert rolling shelter windows. Each row: (area_name, s_24h, s_7d, s_30d).
+
+        Leaves ``s_war`` untouched on existing rows (it is maintained separately
+        via :meth:`save_area_war_times_batch`), so the static war figure is not
+        clobbered by the every-run rolling update.
+        """
+        for area_name, s_24h, s_7d, s_30d in rows:
             if self._backend == "pg":
                 self._execute(
-                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, s_war, updated_at)
-                       VALUES (?, ?, ?, ?, ?, NOW())
+                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
+                       VALUES (?, ?, ?, ?, NOW())
                        ON CONFLICT (area_name) DO UPDATE
                        SET s_24h = EXCLUDED.s_24h, s_7d = EXCLUDED.s_7d,
-                           s_30d = EXCLUDED.s_30d, s_war = EXCLUDED.s_war,
-                           updated_at = NOW()""",
-                    (area_name, s_24h, s_7d, s_30d, s_war),
+                           s_30d = EXCLUDED.s_30d, updated_at = NOW()""",
+                    (area_name, s_24h, s_7d, s_30d),
                 )
             else:
                 self._execute(
-                    """INSERT OR REPLACE INTO area_times (area_name, s_24h, s_7d, s_30d, s_war, updated_at)
-                       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
-                    (area_name, s_24h, s_7d, s_30d, s_war),
+                    """INSERT INTO area_times (area_name, s_24h, s_7d, s_30d, updated_at)
+                       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                       ON CONFLICT(area_name) DO UPDATE
+                       SET s_24h = excluded.s_24h, s_7d = excluded.s_7d,
+                           s_30d = excluded.s_30d, updated_at = CURRENT_TIMESTAMP""",
+                    (area_name, s_24h, s_7d, s_30d),
+                )
+
+    def save_area_war_times_batch(self, rows: list[tuple[str, float]]) -> None:
+        """Bulk upsert the war-window shelter time (s_war) only. Row: (area_name, s_war)."""
+        for area_name, s_war in rows:
+            if self._backend == "pg":
+                self._execute(
+                    """INSERT INTO area_times (area_name, s_war, updated_at)
+                       VALUES (?, ?, NOW())
+                       ON CONFLICT (area_name) DO UPDATE
+                       SET s_war = EXCLUDED.s_war, updated_at = NOW()""",
+                    (area_name, s_war),
+                )
+            else:
+                self._execute(
+                    """INSERT INTO area_times (area_name, s_war, updated_at)
+                       VALUES (?, ?, CURRENT_TIMESTAMP)
+                       ON CONFLICT(area_name) DO UPDATE
+                       SET s_war = excluded.s_war, updated_at = CURRENT_TIMESTAMP""",
+                    (area_name, s_war),
                 )
 
     # ── CSV Cache ──────────────────────────────────────────────────────

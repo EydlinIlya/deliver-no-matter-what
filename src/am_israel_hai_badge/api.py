@@ -18,6 +18,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Tzevaadom API
 _TZEVA_ALERTS_BASE = "https://api.tzevaadom.co.il/alerts-history/id"
+_TZEVA_ALERTS_LIST = "https://api.tzevaadom.co.il/alerts-history"  # newest ~50, id desc
 _TZEVA_MSGS_BASE = "https://api.tzevaadom.co.il/system-messages/id"
 _CITIES_JSON_URL = (
     "https://raw.githubusercontent.com/peppermint-ice/how-the-lion-roars"
@@ -151,6 +152,23 @@ def _find_api_max(base_url: str, floor: int) -> int:
             current = probe
             misses += 1
     return best
+
+
+def _latest_alert_id() -> int | None:
+    """Return the current max alert ID via the list endpoint, or None.
+
+    ``GET /alerts-history`` (no ID) returns the newest ~50 alerts sorted by ID
+    descending, so the max ``id`` is the current head.  This is a single
+    request and — unlike forward-probing from a floor — is immune to the gaps
+    in the alert ID space (post-war the ID counter advances sparsely, so a run
+    of 404s wider than ``_API_MAX_GAP`` would otherwise stall ingestion).
+    """
+    data = _fetch_json(_TZEVA_ALERTS_LIST)
+    if isinstance(data, list) and data:
+        ids = [int(item["id"]) for item in data if isinstance(item, dict) and "id" in item]
+        if ids:
+            return max(ids)
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -535,9 +553,12 @@ def fetch_all_areas_history(area_names: list[str]) -> list[dict]:
 
     # --- Update alerts ---
     local_alerts_max = _read_csv_max_id(_ALERTS_CSV)
-    api_alerts_max = _find_api_max(
-        _TZEVA_ALERTS_BASE, max(local_alerts_max, _ALERTS_ID_FLOOR)
-    )
+    api_alerts_max = _latest_alert_id()
+    if api_alerts_max is None:
+        api_alerts_max = _find_api_max(
+            _TZEVA_ALERTS_BASE, max(local_alerts_max, _ALERTS_ID_FLOOR)
+        )
+    api_alerts_max = max(api_alerts_max, local_alerts_max)
     logger.info("Alerts: local=%d  api=%d", local_alerts_max, api_alerts_max)
     _update_alerts_csv(_ALERTS_CSV, local_alerts_max, api_alerts_max, since)
 
@@ -665,9 +686,12 @@ def update_csv_cache() -> None:
                 _download_upstream_csv(url, path)
 
     local_alerts_max = _read_csv_max_id(_ALERTS_CSV)
-    api_alerts_max = _find_api_max(
-        _TZEVA_ALERTS_BASE, max(local_alerts_max, _ALERTS_ID_FLOOR)
-    )
+    api_alerts_max = _latest_alert_id()
+    if api_alerts_max is None:
+        api_alerts_max = _find_api_max(
+            _TZEVA_ALERTS_BASE, max(local_alerts_max, _ALERTS_ID_FLOOR)
+        )
+    api_alerts_max = max(api_alerts_max, local_alerts_max)
     _update_alerts_csv(_ALERTS_CSV, local_alerts_max, api_alerts_max, since)
 
     if id_to_name:

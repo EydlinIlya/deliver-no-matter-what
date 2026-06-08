@@ -101,8 +101,14 @@ class Database:
         self._conn.autocommit = True
         with self._conn.cursor() as cur:
             cur.execute(_PG_SCHEMA)
+            # Migrations for columns added after the tables were first created
+            # (CREATE TABLE IF NOT EXISTS won't add them to existing tables).
             cur.execute(
                 "ALTER TABLE area_times ADD COLUMN IF NOT EXISTS s_war REAL DEFAULT 0"
+            )
+            cur.execute(
+                "ALTER TABLE badge_data_cache "
+                "ADD COLUMN IF NOT EXISTS war_commits INTEGER DEFAULT 0"
             )
 
     def _init_sqlite(self, path: str) -> None:

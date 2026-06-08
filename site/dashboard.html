@@ -206,6 +206,11 @@
     gap: 1rem; margin-bottom: 1.25rem;
   }
   .badge-card-area { font-size: 1.25rem; font-weight: 700; }
+  /* Each badge sits in its own block with its embed URL directly beneath it,
+     so on mobile they stack as badge → url → badge → url (not both badges
+     then both urls). */
+  .badge-blocks { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .badge-block { flex: 1; min-width: 240px; }
   .embed-group { flex: 1; min-width: 200px; }
   .embed-label {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -580,37 +585,32 @@
           '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
         '</button>' +
       '</div>' +
-      // Two previews side by side
-      '<div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">' +
-        '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
+      // Two blocks: each badge with its embed URL directly beneath it
+      '<div class="badge-blocks">' +
+        '<div class="badge-block">' +
           '<div class="embed-label" style="margin-bottom:0.35rem">Live badge</div>' +
-          '<img src="' + previewUrl + '" alt="live badge" onload="this.classList.add(\'loaded\')"/>' +
-          '<div class="preview-skeleton"></div>' +
-        '</div>' +
-        '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
-          '<div class="embed-label" style="margin-bottom:0.35rem">Lion\'s Roar badge</div>' +
-          '<img src="' + warPreview + '" alt="Lion\'s Roar badge" onload="this.classList.add(\'loaded\')"/>' +
-          '<div class="preview-skeleton"></div>' +
-        '</div>' +
-      '</div>' +
-      // Embeds
-      '<div style="display:flex;flex-direction:column;gap:0.6rem">' +
-        '<div class="embed-group">' +
-          '<div class="embed-label">Live badge embed</div>' +
+          '<div class="badge-card-preview">' +
+            '<img src="' + previewUrl + '" alt="live badge" onload="this.classList.add(\'loaded\')"/>' +
+            '<div class="preview-skeleton"></div>' +
+          '</div>' +
           '<div class="embed-row">' +
             '<input type="text" value="' + escapeAttr(embed) + '" readonly onclick="this.select()" class="embed-code"/>' +
             '<button type="button" class="btn-icon btn-copy" title="Copy">' + copySvg + '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="embed-group">' +
-          '<div class="embed-label">Lion\'s Roar badge embed</div>' +
+        '<div class="badge-block">' +
+          '<div class="embed-label" style="margin-bottom:0.35rem">Lion\'s Roar badge</div>' +
+          '<div class="badge-card-preview">' +
+            '<img src="' + warPreview + '" alt="Lion\'s Roar badge" onload="this.classList.add(\'loaded\')"/>' +
+            '<div class="preview-skeleton"></div>' +
+          '</div>' +
           '<div class="embed-row">' +
             '<input type="text" value="' + escapeAttr(warEmbed) + '" readonly onclick="this.select()" class="embed-code" style="color:#93c5fd"/>' +
             '<button type="button" class="btn-icon btn-copy" title="Copy">' + copySvg + '</button>' +
           '</div>' +
-          '<div class="embed-hint">Paste into your GitHub README.md or any Markdown file</div>' +
         '</div>' +
       '</div>' +
+      '<div class="embed-hint">Paste into your GitHub README.md or any Markdown file</div>' +
     '</div>';
   }
 

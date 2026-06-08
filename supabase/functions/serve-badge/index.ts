@@ -58,7 +58,7 @@ function generateWarBadge(
   <rect x="213" y="62" width="1" height="50" fill="#bed0e4" opacity="0.15"/>
   <text x="109" y="78" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600" fill="#bed0e4" text-anchor="middle" letter-spacing="0.5">Contributions</text>
   <text x="109" y="104" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#f0f1f2" text-anchor="middle">${warCommits}</text>
-  <text x="320" y="78" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600" fill="#bed0e4" text-anchor="middle" letter-spacing="0.5">Shelter time (war)</text>
+  <text x="320" y="78" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600" fill="#bed0e4" text-anchor="middle" letter-spacing="0.5">Spent in the shelter</text>
   <text x="320" y="104" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" fill="#f0f1f2" text-anchor="middle">${formatDuration(sWar)}</text>
 </svg>`;
 }

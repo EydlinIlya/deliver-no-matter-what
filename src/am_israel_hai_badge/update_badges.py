@@ -36,7 +36,7 @@ def main() -> None:
         read_all_cached_records,
         update_csv_cache,
     )
-    from .cache import AlertCache
+    from .cache import _WAR_START, AlertCache
     from .db import Database
 
     db = Database(database_url)
@@ -67,12 +67,22 @@ def main() -> None:
                 db.save_csv(name, content)
                 logger.info("Saved %s to DB (%d bytes)", name, len(content))
 
-    # 4. Load all records and build cache
+    # 4. Load records and build caches.
+    #
+    # The rolling badge windows (24h/7d/30d) use the default 32-day read.  The
+    # war period (Feb 26 – Apr 16) is fixed and now older than that window, so
+    # it needs its own cache loaded from _WAR_START — otherwise the war records
+    # fall outside the rolling read and s_war recomputes to 0 every run.
     records = read_all_cached_records()
     logger.info("Total records: %d", len(records))
 
     cache = AlertCache()
     cache.refresh(records)
+
+    war_records = read_all_cached_records(since=_WAR_START)
+    logger.info("War-window records: %d", len(war_records))
+    war_cache = AlertCache()
+    war_cache.refresh(war_records)
 
     # 5. Compute shelter times for ALL areas → area_times table
     try:
@@ -83,7 +93,7 @@ def main() -> None:
         area_rows: list[tuple[str, float, float, float, float]] = []
         for area_name in all_area_names:
             s_24h, s_7d, s_30d = cache.get_badge_data(area_name)
-            s_war = cache.get_war_shelter_time(area_name)
+            s_war = war_cache.get_war_shelter_time(area_name)
             area_rows.append((area_name, s_24h, s_7d, s_30d, s_war))
 
         db.save_area_times_batch(area_rows)

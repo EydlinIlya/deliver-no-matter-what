@@ -539,28 +539,38 @@
   }
 
   // ── Load areas ────────────────────────────────────
+  function buildAreasFromCities(cities) {
+    const out = [];
+    for (const [he, info] of Object.entries(cities)) {
+      if (typeof info !== 'object' || info === null) continue;
+      const entry = { he };
+      if (info.en) entry.en = info.en;
+      if (info.ru) entry.ru = info.ru;
+      if (info.ar) entry.ar = info.ar;
+      out.push(entry);
+    }
+    out.sort((a, b) => (a.en || a.he).localeCompare(b.en || b.he));
+    return out;
+  }
+
   async function loadAreas() {
+    // 1) Edge function (small, CORS-enabled). Only trust a non-empty array —
+    //    a 502 returns a JSON {error} object that must NOT be used as `areas`.
     try {
       const resp = await fetch(SUPABASE_URL + '/functions/v1/serve-areas');
-      areas = await resp.json();
-    } catch(e) {
-      // Fallback: try fetching cities.json directly
-      try {
-        const resp = await fetch('https://www.tzevaadom.co.il/static/cities.json');
+      if (resp.ok) {
         const data = await resp.json();
-        const cities = data.cities || data;
-        areas = [];
-        for (const [he, info] of Object.entries(cities)) {
-          if (typeof info !== 'object' || info === null) continue;
-          const entry = { he };
-          if (info.en) entry.en = info.en;
-          if (info.ru) entry.ru = info.ru;
-          if (info.ar) entry.ar = info.ar;
-          areas.push(entry);
-        }
-        areas.sort((a, b) => (a.en || a.he).localeCompare(b.en || b.he));
-      } catch(e2) {}
-    }
+        if (Array.isArray(data) && data.length) { areas = data; return; }
+      }
+    } catch(e) {}
+    // 2) Fallback: vendored same-origin cities.json (no CORS, always available,
+    //    all languages). tzevaadom's own JSON sends no CORS header, so we must
+    //    serve our own copy rather than fetch it from the browser.
+    try {
+      const resp = await fetch('/cities.json');
+      const data = await resp.json();
+      areas = buildAreasFromCities(data.cities || data);
+    } catch(e2) {}
   }
 
   // ── Badge card HTML ───────────────────────────────

@@ -20,10 +20,10 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _TZEVA_ALERTS_BASE = "https://api.tzevaadom.co.il/alerts-history/id"
 _TZEVA_ALERTS_LIST = "https://api.tzevaadom.co.il/alerts-history"  # newest ~50, id desc
 _TZEVA_MSGS_BASE = "https://api.tzevaadom.co.il/system-messages/id"
-_CITIES_JSON_URL = (
-    "https://raw.githubusercontent.com/peppermint-ice/how-the-lion-roars"
-    "/refs/heads/main/cities.json"
-)
+# Canonical tzevaadom source. The previous third-party mirror
+# (peppermint-ice/how-the-lion-roars) was deleted and began 404ing, which
+# silently aborted the entire area_times computation every run.
+_CITIES_JSON_URL = "https://www.tzevaadom.co.il/static/cities.json"
 
 # Upstream bootstrap: forks download from central repo on first run instead of
 # doing a full 20-min backfill from the API.

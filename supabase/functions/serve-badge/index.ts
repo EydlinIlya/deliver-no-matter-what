@@ -53,7 +53,7 @@ function generateWarBadge(
     <tspan x="18" y="28" fill="#191c1d">Deliver </tspan><tspan fill="#1d4ed8">No Matter What</tspan>
   </text>
   <text x="406" y="28" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600" fill="#3d527a" text-anchor="end" letter-spacing="1">Feb 26 – Apr 16, 2026</text>
-  <text x="18" y="46" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="500" fill="#3d527a">Delivering during the war:</text>
+  <text x="18" y="46" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="500" fill="#3d527a">Delivering during the <tspan font-weight="700" fill="#1d4ed8">Lion's Roar</tspan></text>
   <rect x="4" y="54" width="416" height="66" fill="#1e2d4a"/>
   <rect x="213" y="62" width="1" height="50" fill="#bed0e4" opacity="0.15"/>
   <text x="109" y="78" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600" fill="#bed0e4" text-anchor="middle" letter-spacing="0.5">Contributions</text>

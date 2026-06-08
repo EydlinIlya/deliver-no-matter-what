@@ -537,7 +537,7 @@
     } catch(e) {
       // Fallback: try fetching cities.json directly
       try {
-        const resp = await fetch('https://raw.githubusercontent.com/peppermint-ice/how-the-lion-roars/refs/heads/main/cities.json');
+        const resp = await fetch('https://www.tzevaadom.co.il/static/cities.json');
         const data = await resp.json();
         const cities = data.cities || data;
         areas = [];

@@ -1,5 +1,7 @@
-const CITIES_URL =
-  "https://raw.githubusercontent.com/peppermint-ice/how-the-lion-roars/refs/heads/main/cities.json";
+// Canonical tzevaadom source (he/en/ru/ar translations for all cities).
+// The previous third-party mirror (peppermint-ice/how-the-lion-roars) was
+// deleted and started 404ing, breaking the area picker.
+const CITIES_URL = "https://www.tzevaadom.co.il/static/cities.json";
 
 let cachedAreas: Array<Record<string, string>> | null = null;
 let cacheTime = 0;

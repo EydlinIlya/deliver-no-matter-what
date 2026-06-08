@@ -564,6 +564,11 @@
     const warUrl   = badgeUrl + '?war=1';
     const embed    = '![Time in Shelter](' + badgeUrl + ')';
     const warEmbed = '![Lion\'s Roar](' + warUrl + ')';
+    // Cache-bust the previews only (not the embed URLs above) so the dashboard
+    // always shows the current badge, never a stale 15-min CDN/browser copy.
+    const cb         = Date.now();
+    const previewUrl = badgeUrl + '?_=' + cb;
+    const warPreview = warUrl + '&_=' + cb;
     const copySvg  =
       '<svg class="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
       '<svg class="icon-check" viewBox="0 0 24 24" style="display:none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
@@ -579,12 +584,12 @@
       '<div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">' +
         '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
           '<div class="embed-label" style="margin-bottom:0.35rem">Live badge</div>' +
-          '<img src="' + badgeUrl + '" alt="live badge" onload="this.classList.add(\'loaded\')"/>' +
+          '<img src="' + previewUrl + '" alt="live badge" onload="this.classList.add(\'loaded\')"/>' +
           '<div class="preview-skeleton"></div>' +
         '</div>' +
         '<div class="badge-card-preview" style="flex:1;min-width:200px">' +
           '<div class="embed-label" style="margin-bottom:0.35rem">Lion\'s Roar badge</div>' +
-          '<img src="' + warUrl + '" alt="Lion\'s Roar badge" onload="this.classList.add(\'loaded\')"/>' +
+          '<img src="' + warPreview + '" alt="Lion\'s Roar badge" onload="this.classList.add(\'loaded\')"/>' +
           '<div class="preview-skeleton"></div>' +
         '</div>' +
       '</div>' +
